@@ -32,6 +32,9 @@ dependencies {
   compileOnly(libs.spotbugs.annotations)
   runtimeOnly(project(":swirlds-config-impl"))
 
+  implementation(libs.hedera.bls.api)
+  implementation(libs.hedera.bls.impl)
+
   // Bundle Dependencies
   implementation(libs.bundles.logging.impl)
   implementation(libs.bundles.javafx)
