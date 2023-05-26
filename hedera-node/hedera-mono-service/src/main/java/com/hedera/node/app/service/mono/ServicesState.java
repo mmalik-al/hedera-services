@@ -397,25 +397,6 @@ public class ServicesState extends PartialNaryMerkleInternal
             app.initializationFlow().runWith(this, bootstrapProps);
             if (trigger == RESTART && isUpgrade) {
                 app.stakeStartupHelper().doUpgradeHousekeeping(networkCtx(), accounts(), stakingInfo());
-                log.info(
-                        LogMarker.STARTUP.getMarker(),
-                        "Starting leaf rehashing for VirtualMap(s) that have the hashes absent");
-                if (getChild(StateChildIndices.ACCOUNTS) instanceof VirtualMap<?, ?> accounts) {
-                    accounts.fullLeafRehash();
-                }
-                if (getChild(StateChildIndices.TOKEN_ASSOCIATIONS) instanceof VirtualMap<?, ?> tokenAssociations) {
-                    tokenAssociations.fullLeafRehash();
-                }
-                if (getChild(StateChildIndices.CONTRACT_STORAGE) instanceof VirtualMap<?, ?> contractStorage) {
-                    contractStorage.fullLeafRehash();
-                }
-                if (getChild(StateChildIndices.STORAGE) instanceof VirtualMap<?, ?> storage) {
-                    storage.fullLeafRehash();
-                }
-                if (getChild(StateChildIndices.UNIQUE_TOKENS) instanceof VirtualMap<?, ?> storage) {
-                    storage.fullLeafRehash();
-                }
-                log.info(LogMarker.STARTUP.getMarker(), "The leaf rehashing for VirtualMap(s) is completed");
             }
 
             // Ensure the prefetch queue is created and thread pool is active instead of waiting
