@@ -119,15 +119,20 @@ public class CustomFixedFeeAssessor {
         final var collector = htsFee.feeCollectorAccountIdOrThrow();
         final var fixedFeeSpec = htsFee.fixedFeeOrThrow();
         final var amount = fixedFeeSpec.amount();
-        final var denominatingToken = fixedFeeSpec.denominatingTokenIdOrThrow();
-        adjustHtsFees(result, sender, collector, chargingTokenMeta, amount, denominatingToken);
+        // It is possible that denominating tokenId is set to sentinel value of 0.0.0.
+        // In that scenario, the created token should be used as the denominating token.
+        final var denominatingTokenId =
+                fixedFeeSpec.denominatingTokenIdOrThrow().tokenNum() == 0L
+                        ? chargingTokenMeta.tokenId()
+                        : fixedFeeSpec.denominatingTokenIdOrThrow();
+        adjustHtsFees(result, sender, collector, chargingTokenMeta, amount, denominatingTokenId);
 
         // add all assessed fees for transaction record
         result.addAssessedCustomFee(AssessedCustomFee.newBuilder()
                 .effectivePayerAccountId(sender)
                 .amount(amount)
                 .feeCollectorAccountId(collector)
-                .tokenId(fixedFeeSpec.denominatingTokenId())
+                .tokenId(denominatingTokenId)
                 .build());
     }
 }
