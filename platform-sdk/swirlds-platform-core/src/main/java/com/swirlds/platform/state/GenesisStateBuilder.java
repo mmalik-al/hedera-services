@@ -25,6 +25,9 @@ import com.swirlds.platform.internal.EventImpl;
 import com.swirlds.platform.state.signed.ReservedSignedState;
 import com.swirlds.platform.state.signed.SignedState;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.time.Instant;
 import java.util.List;
 
@@ -32,6 +35,7 @@ import java.util.List;
  * Responsible for building the genesis state.
  */
 public final class GenesisStateBuilder {
+    private static final Logger logger = LogManager.getLogger(GenesisStateBuilder.class);
 
     private GenesisStateBuilder() {}
 
@@ -72,6 +76,7 @@ public final class GenesisStateBuilder {
 
         final long genesisFreezeTime = configuration.genesisFreezeTime();
         if (genesisFreezeTime > 0) {
+            logger.info("Genesis freeze time is set to {}", Instant.ofEpochSecond(genesisFreezeTime));
             dualState.setFreezeTime(Instant.ofEpochSecond(genesisFreezeTime));
         }
 
