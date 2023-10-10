@@ -103,6 +103,7 @@ public final class GenesisStateBuilder {
             @NonNull final SwirldState swirldState) {
 
         final BasicConfig basicConfig = platformContext.getConfiguration().getConfigData(BasicConfig.class);
+        logger.info(STARTUP.getMarker(), "basicConfig = {}", basicConfig);
         final State state = new State();
         state.setPlatformState(buildGenesisPlatformState(addressBook, appVersion));
         state.setSwirldState(swirldState);
