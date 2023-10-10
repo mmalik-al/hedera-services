@@ -31,6 +31,8 @@ import org.apache.logging.log4j.Logger;
 import java.time.Instant;
 import java.util.List;
 
+import static com.swirlds.logging.LogMarker.STARTUP;
+
 /**
  * Responsible for building the genesis state.
  */
@@ -76,7 +78,7 @@ public final class GenesisStateBuilder {
 
         final long genesisFreezeTime = configuration.genesisFreezeTime();
         if (genesisFreezeTime > 0) {
-            logger.info("Genesis freeze time is set to {}", Instant.ofEpochSecond(genesisFreezeTime));
+            logger.info(STARTUP.getMarker(), "Genesis freeze time is set to {}", Instant.ofEpochSecond(genesisFreezeTime));
             dualState.setFreezeTime(Instant.ofEpochSecond(genesisFreezeTime));
         }
 
