@@ -77,6 +77,8 @@ public final class GenesisStateBuilder {
         final DualStateImpl dualState = new DualStateImpl();
 
         final long genesisFreezeTime = configuration.genesisFreezeTime();
+        logger.info(STARTUP.getMarker(), "before genesis freeze time is set to {}", Instant.ofEpochSecond(genesisFreezeTime));
+
         if (genesisFreezeTime > 0) {
             logger.info(STARTUP.getMarker(), "Genesis freeze time is set to {}", Instant.ofEpochSecond(genesisFreezeTime));
             dualState.setFreezeTime(Instant.ofEpochSecond(genesisFreezeTime));

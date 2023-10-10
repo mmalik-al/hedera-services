@@ -168,6 +168,7 @@ public final class StartupStateUtils {
                 return copyInitialSignedState(platformContext, loadedState.get());
             }
         }
+        logger.info(STARTUP.getMarker(), "before buildGenesisState");
 
         final ReservedSignedState genesisState =
                 buildGenesisState(platformContext, configAddressBook, softwareVersion, genesisStateBuilder.get());

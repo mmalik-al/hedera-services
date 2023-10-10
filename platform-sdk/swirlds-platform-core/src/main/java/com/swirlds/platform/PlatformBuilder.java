@@ -19,6 +19,7 @@ package com.swirlds.platform;
 import static com.swirlds.common.io.utility.FileUtils.getAbsolutePath;
 import static com.swirlds.common.io.utility.FileUtils.rethrowIO;
 import static com.swirlds.common.threading.manager.AdHocThreadManager.getStaticThreadManager;
+import static com.swirlds.logging.LogMarker.STARTUP;
 import static com.swirlds.platform.StaticPlatformBuilder.doStaticSetup;
 import static com.swirlds.platform.StaticPlatformBuilder.getGlobalMetrics;
 import static com.swirlds.platform.StaticPlatformBuilder.getMetricsProvider;
@@ -47,6 +48,7 @@ import com.swirlds.platform.config.legacy.LegacyConfigProperties;
 import com.swirlds.platform.config.legacy.LegacyConfigPropertiesLoader;
 import com.swirlds.platform.internal.SignedStateLoadingException;
 import com.swirlds.platform.recovery.EmergencyRecoveryManager;
+import com.swirlds.platform.state.GenesisStateBuilder;
 import com.swirlds.platform.state.State;
 import com.swirlds.platform.state.address.AddressBookInitializer;
 import com.swirlds.platform.state.signed.ReservedSignedState;
@@ -55,7 +57,11 @@ import com.swirlds.platform.util.BootstrapUtils;
 import com.swirlds.platform.util.MetricsDocUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -66,6 +72,7 @@ import java.util.function.Supplier;
  * Builds a {@link SwirldsPlatform} instance.
  */
 public final class PlatformBuilder {
+    private static final Logger logger = LogManager.getLogger(PlatformBuilder.class);
 
     private final String appName;
     private final SoftwareVersion softwareVersion;
@@ -216,6 +223,7 @@ public final class PlatformBuilder {
         final StateConfig stateConfig = configuration.getConfigData(StateConfig.class);
         final EmergencyRecoveryManager emergencyRecoveryManager = new EmergencyRecoveryManager(
                 stateConfig, new Shutdown()::shutdown, basicConfig.getEmergencyRecoveryFileLoadDir());
+        logger.info(STARTUP.getMarker(), "before getInitialState");
 
         try (final ReservedSignedState initialState = getInitialState(
                 platformContext,
