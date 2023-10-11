@@ -152,7 +152,7 @@ public class SchedulesExpiryDuringReconnect extends HapiSuite {
                                 .adminKey(DEFAULT_PAYER)
                                 .logging()
                                 .advertisingCreation(),
-                        sleepFor(Duration.ofSeconds(120).toMillis()),
+                        sleepFor(Duration.ofSeconds(90).toMillis()),
                         getScheduleInfo(longLastingSchedule)
                                 .setNode(reconnectingNode)
                                 .hasScheduledTxnIdSavedBy(longLastingSchedule)
