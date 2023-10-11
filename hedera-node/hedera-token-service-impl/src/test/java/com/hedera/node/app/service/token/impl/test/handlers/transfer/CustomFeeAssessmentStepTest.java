@@ -16,6 +16,7 @@
 
 package com.hedera.node.app.service.token.impl.test.handlers.transfer;
 
+import static com.hedera.node.app.service.token.impl.TokenServiceImpl.ACCOUNTS_KEY;
 import static com.hedera.node.app.service.token.impl.handlers.BaseCryptoHandler.asAccount;
 import static com.hedera.node.app.service.token.impl.test.handlers.transfer.AccountAmountUtils.aaWith;
 import static java.util.Collections.emptyList;
@@ -28,11 +29,14 @@ import com.hedera.hapi.node.base.AccountID;
 import com.hedera.hapi.node.base.Key;
 import com.hedera.hapi.node.base.TokenID;
 import com.hedera.hapi.node.base.TokenTransferList;
+import com.hedera.hapi.node.state.token.Account;
 import com.hedera.hapi.node.state.token.Token;
 import com.hedera.hapi.node.token.CryptoTransferTransactionBody;
 import com.hedera.hapi.node.transaction.FixedFee;
+import com.hedera.node.app.service.token.ReadableAccountStore;
 import com.hedera.node.app.service.token.ReadableTokenRelationStore;
 import com.hedera.node.app.service.token.ReadableTokenStore;
+import com.hedera.node.app.service.token.impl.ReadableAccountStoreImpl;
 import com.hedera.node.app.service.token.impl.WritableTokenStore;
 import com.hedera.node.app.service.token.impl.handlers.transfer.AssociateTokenRecipientsStep;
 import com.hedera.node.app.service.token.impl.handlers.transfer.CustomFeeAssessmentStep;
@@ -43,6 +47,8 @@ import com.hedera.node.app.service.token.impl.test.handlers.util.TestStoreFactor
 import com.hedera.node.app.service.token.records.CryptoTransferRecordBuilder;
 import java.util.List;
 import java.util.Map;
+
+import com.hedera.node.app.spi.fixtures.state.MapReadableKVState;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -84,8 +90,10 @@ class CustomFeeAssessmentStepTest extends StepsBase {
         // NFT transfer with royalty fee (fraction 1/2), fallbackFee with fixed hbar fee
         final var hbarsReceiver = asAccount(hbarReceiver);
         final var tokensReceiver = asAccount(tokenReceiver);
-
+        writableAccountStore.put(Account.newBuilder().accountId(tokenReceiverId).tinybarBalance(100000L).build());
         givenTxn();
+
+        given(transferContext.getHandleContext().readableStore(ReadableAccountStore.class)).willReturn(writableAccountStore);
 
         final var listOfOps = subject.assessCustomFees(transferContext);
         assertThat(listOfOps).hasSize(2);
@@ -265,7 +273,9 @@ class CustomFeeAssessmentStepTest extends StepsBase {
         final var hbarsReceiver = asAccount(hbarReceiver);
         final var tokensReceiver = asAccount(tokenReceiver);
 
+        writableAccountStore.put(Account.newBuilder().accountId(tokenReceiverId).tinybarBalance(100000L).build());
         givenTxn();
+        given(transferContext.getHandleContext().readableStore(ReadableAccountStore.class)).willReturn(writableAccountStore);
 
         final var listOfOps = subject.assessCustomFees(transferContext);
         assertThat(listOfOps).hasSize(2);

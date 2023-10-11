@@ -45,6 +45,7 @@ import com.hedera.hapi.node.base.TokenTransferList;
 import com.hedera.hapi.node.base.TransferList;
 import com.hedera.hapi.node.token.CryptoTransferTransactionBody;
 import com.hedera.hapi.node.transaction.TransactionBody;
+import com.hedera.node.app.service.token.ReadableAccountStore;
 import com.hedera.node.app.service.token.impl.WritableAccountStore;
 import com.hedera.node.app.service.token.impl.handlers.CryptoTransferHandler;
 import com.hedera.node.app.service.token.records.CryptoCreateRecordBuilder;
@@ -245,12 +246,13 @@ class CryptoTransferHandlerTest extends CryptoTransferHandlerTestBase {
                 })
                 .will((invocation) -> {
                     final var copy =
-                            account.copyBuilder().accountId(tokenReceiverId).build();
+                            account.copyBuilder().accountId(tokenReceiverId).tinybarBalance(100000L).build();
                     writableAccountStore.put(copy);
                     writableAliases.put(edKeyAlias, asAccount(tokenReceiver));
                     return cryptoCreateRecordBuilder.accountID(asAccount(tokenReceiver));
                 });
         given(handleContext.writableStore(WritableAccountStore.class)).willReturn(writableAccountStore);
+        given(handleContext.readableStore(ReadableAccountStore.class)).willReturn(writableAccountStore);
 
         assertThatThrownBy(() -> subject.handle(handleContext))
                 .isInstanceOf(HandleException.class)
@@ -276,7 +278,7 @@ class CryptoTransferHandlerTest extends CryptoTransferHandlerTestBase {
                 })
                 .will((invocation) -> {
                     final var copy =
-                            account.copyBuilder().accountId(tokenReceiverId).build();
+                            account.copyBuilder().accountId(tokenReceiverId).tinybarBalance(100000L).build();
                     writableAccountStore.put(copy);
                     writableAliases.put(edKeyAlias, asAccount(tokenReceiver));
                     writableTokenRelStore.put(fungibleTokenRelation
@@ -287,6 +289,7 @@ class CryptoTransferHandlerTest extends CryptoTransferHandlerTestBase {
                     return cryptoCreateRecordBuilder.accountID(asAccount(tokenReceiver));
                 });
         given(handleContext.writableStore(WritableAccountStore.class)).willReturn(writableAccountStore);
+        given(handleContext.readableStore(ReadableAccountStore.class)).willReturn(writableAccountStore);
 
         final var initialSenderBalance = writableAccountStore.get(ownerId).tinybarBalance();
         final var initialFeeCollectorBalance =

@@ -97,13 +97,13 @@ public class CustomFeeAssessor {
         for (final var entry : result.getMutableInputTokenAdjustments().entrySet()) {
             final var entryValue = entry.getValue();
             inputFungibleTransfers += entry.getValue().size();
-            validateAdjustmentEntry(tokenRelStore, accountStore, entry, entryValue);
+            validateAdjustmentEntry(tokenRelStore, accountStore, entry, entryValue, true);
         }
 
         for (final var entry : result.getHtsAdjustments().entrySet()) {
             final var entryValue = entry.getValue();
             newFungibleTransfers += entryValue.size();
-            validateAdjustmentEntry(tokenRelStore, accountStore, entry, entryValue);
+            validateAdjustmentEntry(tokenRelStore, accountStore, entry, entryValue, false);
         }
 
         for (final var entry : result.getHbarAdjustments().entrySet()) {
@@ -152,7 +152,8 @@ public class CustomFeeAssessor {
             ReadableTokenRelationStore tokenRelStore,
             ReadableAccountStore accountStore,
             Map.Entry<TokenID, Map<AccountID, Long>> entry,
-            Map<AccountID, Long> entryValue) {
+            Map<AccountID, Long> entryValue,
+            boolean isInputFT) {
         for (final var entryTx : entryValue.entrySet()) {
             final Long htsBalanceChange = entryTx.getValue();
             if (htsBalanceChange < 0) {
@@ -164,10 +165,11 @@ public class CustomFeeAssessor {
                 validateFalse(
                         tokenRel == null && account != null && account.tinybarBalance() == 0,
                         INSUFFICIENT_SENDER_ACCOUNT_BALANCE_FOR_CUSTOM_FEE);
-
-                validateTrue(tokenRel != null, TOKEN_NOT_ASSOCIATED_TO_ACCOUNT);
-                validateTrue(
-                        tokenRel.balance() + htsBalanceChange >= 0, INSUFFICIENT_SENDER_ACCOUNT_BALANCE_FOR_CUSTOM_FEE);
+                if (!isInputFT) {
+                    validateTrue(tokenRel != null, TOKEN_NOT_ASSOCIATED_TO_ACCOUNT);
+                    validateTrue(
+                            tokenRel.balance() + htsBalanceChange >= 0, INSUFFICIENT_SENDER_ACCOUNT_BALANCE_FOR_CUSTOM_FEE);
+                }
             }
         }
     }
