@@ -25,12 +25,10 @@ import static com.hedera.services.bdd.spec.transactions.TxnVerbs.cryptoTransfer;
 import static com.hedera.services.bdd.spec.transactions.TxnVerbs.fileUpdate;
 import static com.hedera.services.bdd.spec.transactions.TxnVerbs.uncheckedSubmit;
 import static com.hedera.services.bdd.spec.transactions.TxnVerbs.uploadInitCode;
-import static com.hedera.services.bdd.spec.utilops.UtilVerbs.blockingOrder;
-import static com.hedera.services.bdd.spec.utilops.UtilVerbs.sleepFor;
-import static com.hedera.services.bdd.spec.utilops.UtilVerbs.usableTxnIdNamed;
-import static com.hedera.services.bdd.spec.utilops.UtilVerbs.withOpContext;
+import static com.hedera.services.bdd.spec.utilops.UtilVerbs.*;
 import static com.hedera.services.bdd.suites.utils.sysfiles.serdes.ThrottleDefsLoader.protoDefsFromResource;
 
+import com.hedera.services.bdd.junit.HapiTest;
 import com.hedera.services.bdd.junit.HapiTestSuite;
 import com.hedera.services.bdd.spec.HapiSpec;
 import com.hedera.services.bdd.spec.HapiSpecOperation;
@@ -65,10 +63,12 @@ public class CongestionPricingSuite extends HapiSuite {
     @Override
     public List<HapiSpec> getSpecsInSuite() {
         return List.of(new HapiSpec[] {
-            canUpdateMultipliersDynamically(),
+                canUpdateMultipliersDynamically(),
+                canUpdateMultipliersDynamically2()
         });
     }
 
+    @HapiTest
     private HapiSpec canUpdateMultipliersDynamically() {
         var artificialLimits = protoDefsFromResource("testSystemFiles/artificial-limits-congestion.json");
         var defaultThrottles = protoDefsFromResource("testSystemFiles/throttles-dev.json");
@@ -122,6 +122,82 @@ public class CongestionPricingSuite extends HapiSuite {
                                 .payingWith(CIVILIAN_ACCOUNT)
                                 .fee(ONE_HUNDRED_HBARS)
                                 .sending(ONE_HBAR)
+                                .via("pricyCall"))
+                .then(
+                        getTxnRecord("pricyCall").payingWith(GENESIS).providingFeeTo(congestionFee -> {
+                            log.info("Congestion fee is {}", congestionFee);
+                            sevenXPrice.set(congestionFee);
+                        }),
+
+                        /* Make sure the multiplier is reset before the next spec runs */
+                        fileUpdate(THROTTLE_DEFS)
+                                .fee(ONE_HUNDRED_HBARS)
+                                .payingWith(EXCHANGE_RATE_CONTROL)
+                                .contents(defaultThrottles.toByteArray()),
+                        fileUpdate(APP_PROPERTIES)
+                                .fee(ONE_HUNDRED_HBARS)
+                                .payingWith(EXCHANGE_RATE_CONTROL)
+                                .overridingProps(Map.of(
+                                        FEES_PERCENT_CONGESTION_MULTIPLIERS, defaultCongestionMultipliers,
+                                        FEES_MIN_CONGESTION_PERIOD, defaultMinCongestionPeriod)),
+                        cryptoTransfer(HapiCryptoTransfer.tinyBarsFromTo(GENESIS, FUNDING, 1))
+                                .payingWith(GENESIS),
+
+                        /* Check for error after resetting settings. */
+                        withOpContext((spec, opLog) -> Assertions.assertEquals(
+                                7.0,
+                                (1.0 * sevenXPrice.get()) / normalPrice.get(),
+                                0.1,
+                                "~7x multiplier should be in affect!")));
+    }
+
+    //Temp test, because ContractCallHandler is missing implementation of calculateFees()
+    @HapiTest
+    private HapiSpec canUpdateMultipliersDynamically2() {
+        var artificialLimits = protoDefsFromResource("testSystemFiles/artificial-limits-congestion.json");
+        var defaultThrottles = protoDefsFromResource("testSystemFiles/throttles-dev.json");
+        String tmpMinCongestionPeriod = "1";
+
+        AtomicLong normalPrice = new AtomicLong();
+        AtomicLong sevenXPrice = new AtomicLong();
+
+        return defaultHapiSpec("CanUpdateMultipliersDynamically2")
+                .given(
+                        cryptoCreate(CIVILIAN_ACCOUNT).payingWith(GENESIS).balance(ONE_MILLION_HBARS),
+                        cryptoCreate("Second").payingWith(GENESIS).balance(ONE_HBAR),
+
+                        cryptoTransfer(HapiCryptoTransfer.tinyBarsFromTo(CIVILIAN_ACCOUNT, "Second", 5L))
+                                .via("cheapCall"),
+
+                        getTxnRecord("cheapCall").providingFeeTo(normalFee -> {
+                            log.info("Normal fee is {}", normalFee);
+                            normalPrice.set(normalFee);
+                        }).logged())
+                .when(
+                        fileUpdate(APP_PROPERTIES)
+                                .fee(ONE_HUNDRED_HBARS)
+                                .payingWith(EXCHANGE_RATE_CONTROL)
+                                .overridingProps(Map.of(
+                                        FEES_PERCENT_CONGESTION_MULTIPLIERS,
+                                        "1,7x",
+                                        FEES_MIN_CONGESTION_PERIOD,
+                                        tmpMinCongestionPeriod)),
+                        fileUpdate(THROTTLE_DEFS)
+                                .payingWith(EXCHANGE_RATE_CONTROL)
+                                .contents(artificialLimits.toByteArray()),
+                        sleepFor(2_000),
+                        blockingOrder(IntStream.range(0, 100)
+                                .mapToObj(i -> new HapiSpecOperation[] {
+                                        usableTxnIdNamed("uncheckedTxn" + i).payerId(CIVILIAN_ACCOUNT),
+                                        uncheckedSubmit(
+                                                cryptoTransfer(HapiCryptoTransfer.tinyBarsFromTo(CIVILIAN_ACCOUNT, "Second", 5L))
+                                                .txnId("uncheckedTxn" + i))
+                                                .payingWith(GENESIS),
+                                        sleepFor(125)
+                                })
+                                .flatMap(Arrays::stream)
+                                .toArray(HapiSpecOperation[]::new)),
+                        cryptoTransfer(HapiCryptoTransfer.tinyBarsFromTo(CIVILIAN_ACCOUNT, "Second", 5L))
                                 .via("pricyCall"))
                 .then(
                         getTxnRecord("pricyCall").payingWith(GENESIS).providingFeeTo(congestionFee -> {
