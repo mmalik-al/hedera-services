@@ -421,7 +421,7 @@ public class HandleWorkflow {
                     // Dispatch the transaction to the handler
                     dispatcher.dispatchHandle(context);
                     recordBuilder.status(SUCCESS);
-
+                    recordBuilder.transactionFee(fees.totalFee());
                     // After transaction is successfully handled update the gas throttle by leaking the unused gas
                     if (isGasThrottled(transactionInfo.functionality()) && recordBuilder.hasContractResult()) {
                         final var contractsConfig = configuration.getConfigData(ContractsConfig.class);
