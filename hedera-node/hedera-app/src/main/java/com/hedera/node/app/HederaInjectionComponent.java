@@ -22,6 +22,7 @@ import com.hedera.node.app.components.IngestInjectionComponent;
 import com.hedera.node.app.components.QueryInjectionComponent;
 import com.hedera.node.app.fees.ExchangeRateManager;
 import com.hedera.node.app.fees.FeeManager;
+import com.hedera.node.app.fees.congestion.MonoMultiplierSources;
 import com.hedera.node.app.grpc.GrpcInjectionModule;
 import com.hedera.node.app.grpc.GrpcServerManager;
 import com.hedera.node.app.info.CurrentPlatformStatus;
@@ -170,6 +171,9 @@ public interface HederaInjectionComponent {
 
         @BindsInstance
         Builder genesisRecordsConsensusHook(GenesisRecordsConsensusHook genesisRecordsBuilder);
+
+        @BindsInstance
+        Builder monoMultiplierSources(MonoMultiplierSources monoMultiplierSources);
 
         HederaInjectionComponent build();
     }

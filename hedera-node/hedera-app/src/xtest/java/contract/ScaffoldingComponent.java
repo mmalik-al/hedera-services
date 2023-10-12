@@ -21,6 +21,7 @@ import com.hedera.hapi.node.transaction.Query;
 import com.hedera.hapi.node.transaction.TransactionBody;
 import com.hedera.node.app.fees.ExchangeRateManager;
 import com.hedera.node.app.fees.FeeManager;
+import com.hedera.node.app.fees.congestion.MonoMultiplierSources;
 import com.hedera.node.app.fixtures.state.FakeHederaState;
 import com.hedera.node.app.service.contract.impl.exec.processors.HtsTranslatorsModule;
 import com.hedera.node.app.service.contract.impl.exec.systemcontracts.HtsCallTranslator;
@@ -83,6 +84,8 @@ public interface ScaffoldingComponent {
     BiFunction<Query, AccountID, QueryContext> queryContextFactory();
 
     FeeManager feeManager();
+
+    MonoMultiplierSources monoMultiplierSources();
 
     ExchangeRateManager exchangeRateManager();
 

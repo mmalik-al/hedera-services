@@ -26,6 +26,7 @@ import com.hedera.hapi.node.base.Key;
 import com.hedera.hapi.node.base.SubType;
 import com.hedera.hapi.node.base.TransactionFeeSchedule;
 import com.hedera.hapi.node.transaction.TransactionBody;
+import com.hedera.node.app.fees.congestion.MonoMultiplierSources;
 import com.hedera.node.app.spi.fees.FeeCalculator;
 import com.hedera.pbj.runtime.io.buffer.Bytes;
 import edu.umd.cs.findbugs.annotations.NonNull;
@@ -61,9 +62,12 @@ public final class FeeManager {
     /** The exchange rate manager to use for the current rate */
     private final ExchangeRateManager exchangeRateManager;
 
+    private final MonoMultiplierSources multiplierSources;
+
     @Inject
-    public FeeManager(@NonNull final ExchangeRateManager exchangeRateManager) {
+    public FeeManager(@NonNull final ExchangeRateManager exchangeRateManager, final MonoMultiplierSources multiplierSources) {
         this.exchangeRateManager = requireNonNull(exchangeRateManager);
+        this.multiplierSources = multiplierSources;
     }
 
     /**
@@ -163,7 +167,9 @@ public final class FeeManager {
                 numVerifications,
                 signatureMapSize,
                 feeData,
-                exchangeRateManager.activeRate(consensusTime));
+                exchangeRateManager.activeRate(consensusTime),
+                multiplierSources
+        );
     }
 
     @NonNull
@@ -173,7 +179,7 @@ public final class FeeManager {
         final var feeData = getFeeData(functionality, consensusTime, SubType.DEFAULT);
 
         // Create the fee calculator
-        return new FeeCalculatorImpl(feeData, exchangeRateManager.activeRate(consensusTime));
+        return new FeeCalculatorImpl(feeData, exchangeRateManager.activeRate(consensusTime), multiplierSources);
     }
 
     /**

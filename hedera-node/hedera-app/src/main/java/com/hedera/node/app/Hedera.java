@@ -806,6 +806,7 @@ public final class Hedera implements SwirldMain {
                             handleThrottling))
                     .networkUtilizationManager(
                             new NetworkUtilizationManagerImpl(handleThrottling, monoMultiplierSources))
+                    .monoMultiplierSources(monoMultiplierSources)
                     .self(SelfNodeInfoImpl.of(nodeAddress, version))
                     .platform(platform)
                     .maxSignedTxnSize(MAX_SIGNED_TXN_SIZE)

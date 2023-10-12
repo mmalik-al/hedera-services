@@ -29,6 +29,7 @@ import com.hedera.hapi.node.base.TransferList;
 import com.hedera.hapi.node.token.CryptoTransferTransactionBody;
 import com.hedera.hapi.node.transaction.ExchangeRate;
 import com.hedera.hapi.node.transaction.TransactionBody;
+import com.hedera.node.app.fees.congestion.MonoMultiplierSources;
 import com.hedera.node.app.hapi.fees.calc.OverflowCheckingCalc;
 import com.hedera.node.app.hapi.fees.usage.BaseTransactionMeta;
 import com.hedera.node.app.hapi.fees.usage.SigUsage;
@@ -60,6 +61,8 @@ public class FeeCalculatorImpl implements FeeCalculator {
     /** The basic info from parsing the transaction */
     private final SigUsage sigUsage;
 
+    private final MonoMultiplierSources multiplierSources;
+
     /**
      * Create a new instance. One is created per transaction.
      *
@@ -83,12 +86,14 @@ public class FeeCalculatorImpl implements FeeCalculator {
             final int numVerifications,
             final int signatureMapSize,
             @NonNull final FeeData feeData,
-            @NonNull final ExchangeRate currentRate) {
+            @NonNull final ExchangeRate currentRate,
+            @NonNull final MonoMultiplierSources multiplierSources) {
         //  Perform basic validations, and convert the PBJ objects to Google protobuf objects for `hapi-fees`.
         requireNonNull(txBody);
         requireNonNull(payerKey);
         this.feeData = fromPbj(feeData);
         this.currentRate = fromPbj(currentRate);
+        this.multiplierSources = multiplierSources;
         if (numVerifications < 0) {
             throw new IllegalArgumentException("numVerifications must be >= 0");
         }
@@ -115,7 +120,11 @@ public class FeeCalculatorImpl implements FeeCalculator {
         usage.resetForTransaction(baseMeta, sigUsage);
     }
 
-    public FeeCalculatorImpl(@Nullable final FeeData feeData, @NonNull final ExchangeRate currentRate) {
+    public FeeCalculatorImpl(
+            @Nullable final FeeData feeData,
+            @NonNull final ExchangeRate currentRate,
+            @NonNull final MonoMultiplierSources multiplierSources) {
+        this.multiplierSources = multiplierSources;
         if (feeData == null) {
             this.feeData = null;
             this.usage = null;
@@ -197,7 +206,9 @@ public class FeeCalculatorImpl implements FeeCalculator {
         failIfLegacyOnly();
         // Use the "hapi-fees" module to calculate the fees, and convert to one of our "Fees" objects.
         final var overflowCalc = new OverflowCheckingCalc();
-        final var feeObject = overflowCalc.fees(usage, feeData, currentRate, 1);
+
+        //use multiplier
+        final var feeObject = overflowCalc.fees(usage, feeData, currentRate, multiplierSources.maxCurrentMultiplier());
         return new Fees(feeObject.nodeFee(), feeObject.networkFee(), feeObject.serviceFee());
     }
 

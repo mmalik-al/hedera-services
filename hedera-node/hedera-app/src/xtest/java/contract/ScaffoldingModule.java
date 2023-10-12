@@ -16,6 +16,7 @@
 
 package contract;
 
+import static com.hedera.hapi.node.base.HederaFunctionality.CRYPTO_TRANSFER;
 import static com.hedera.node.app.spi.HapiUtils.functionOf;
 import static com.hedera.node.app.spi.workflows.HandleContext.TransactionCategory.USER;
 
@@ -28,6 +29,7 @@ import com.hedera.node.app.authorization.AuthorizerImpl;
 import com.hedera.node.app.fees.ExchangeRateManager;
 import com.hedera.node.app.fees.FeeManager;
 import com.hedera.node.app.fees.NoOpFeeCalculator;
+import com.hedera.node.app.fees.congestion.MonoMultiplierSources;
 import com.hedera.node.app.fixtures.state.FakeHederaState;
 import com.hedera.node.app.records.BlockRecordManager;
 import com.hedera.node.app.records.impl.BlockRecordManagerImpl;
@@ -38,6 +40,7 @@ import com.hedera.node.app.records.impl.producers.StreamFileProducerSingleThread
 import com.hedera.node.app.records.impl.producers.formats.BlockRecordWriterFactoryImpl;
 import com.hedera.node.app.records.impl.producers.formats.v6.BlockRecordFormatV6;
 import com.hedera.node.app.service.mono.config.HederaNumbers;
+import com.hedera.node.app.service.mono.fees.congestion.ThrottleMultiplierSource;
 import com.hedera.node.app.service.token.CryptoSignatureWaivers;
 import com.hedera.node.app.service.token.impl.CryptoSignatureWaiversImpl;
 import com.hedera.node.app.service.token.impl.handlers.staking.StakeRewardCalculator;
@@ -57,6 +60,7 @@ import com.hedera.node.app.state.DeduplicationCache;
 import com.hedera.node.app.state.HederaState;
 import com.hedera.node.app.state.recordcache.DeduplicationCacheImpl;
 import com.hedera.node.app.state.recordcache.RecordCacheImpl;
+import com.hedera.node.app.throttle.HandleThrottleAccumulator;
 import com.hedera.node.app.workflows.TransactionChecker;
 import com.hedera.node.app.workflows.dispatcher.ReadableStoreFactory;
 import com.hedera.node.app.workflows.dispatcher.TransactionDispatcher;
@@ -70,6 +74,7 @@ import com.hedera.node.app.workflows.prehandle.DummyPreHandleDispatcher;
 import com.hedera.node.app.workflows.query.QueryContextImpl;
 import com.hedera.node.config.ConfigProvider;
 import com.hedera.node.config.VersionedConfigImpl;
+import com.hedera.node.config.data.FeesConfig;
 import com.hedera.node.config.data.HederaConfig;
 import com.hedera.node.config.testfixtures.HederaTestConfigBuilder;
 import com.swirlds.common.crypto.Signature;
@@ -80,9 +85,13 @@ import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -104,6 +113,9 @@ import javax.inject.Singleton;
  */
 @Module
 public interface ScaffoldingModule {
+
+    static final Logger logger = LogManager.getLogger(ScaffoldingModule.class);
+
     @Provides
     @Singleton
     static HederaState provideState() {
@@ -256,5 +268,41 @@ public interface ScaffoldingModule {
                     consensusTime,
                     authorizer);
         };
+    }
+
+    @Provides
+    @Singleton
+    static MonoMultiplierSources createMultiplierSources(@NonNull final ConfigProvider configProvider) {
+        var handleThrottling = new HandleThrottleAccumulator(configProvider);
+        final var genericFeeMultiplier = new ThrottleMultiplierSource(
+                "logical TPS",
+                "TPS",
+                "CryptoTransfer throughput",
+                logger,
+                () -> configProvider
+                        .getConfiguration()
+                        .getConfigData(FeesConfig.class)
+                        .minCongestionPeriod(),
+                () -> configProvider
+                        .getConfiguration()
+                        .getConfigData(FeesConfig.class)
+                        .percentCongestionMultipliers(),
+                () -> handleThrottling.activeThrottlesFor(CRYPTO_TRANSFER));
+        final var gasFeeMultiplier = new ThrottleMultiplierSource(
+                "EVM gas/sec",
+                "gas/sec",
+                "EVM utilization",
+                logger,
+                () -> configProvider
+                        .getConfiguration()
+                        .getConfigData(FeesConfig.class)
+                        .minCongestionPeriod(),
+                () -> configProvider
+                        .getConfiguration()
+                        .getConfigData(FeesConfig.class)
+                        .percentCongestionMultipliers(),
+                () -> List.of(handleThrottling.gasLimitThrottle()));
+
+        return new MonoMultiplierSources(genericFeeMultiplier, gasFeeMultiplier);
     }
 }

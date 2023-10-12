@@ -40,17 +40,13 @@ public class MonoMultiplierSources {
     }
 
     public void updateMultiplier(@NonNull final Instant consensusTime) {
-        TxnAccessor accessor = null;
-        try {
-            // only accessor.congestionExempt() is used in the mono multiplier implementation and that seems like could
-            // be only set for triggered transactions
-            // so using just a dummy accessor
-            accessor = SignedTxnAccessor.from(Bytes.EMPTY.toByteArray());
-        } catch (InvalidProtocolBufferException e) {
-            // this should never happen because we use an empty byte array constant above which should be always valid
-            throw new RuntimeException(e);
-        }
+        var accessor = getEmptyTxnAccessor();
         this.delegate.updateMultiplier(accessor, consensusTime);
+    }
+
+    public long maxCurrentMultiplier() {
+        var accessor = getEmptyTxnAccessor();
+        return this.delegate.maxCurrentMultiplier(accessor);
     }
 
     @NonNull
@@ -73,5 +69,20 @@ public class MonoMultiplierSources {
 
     public void resetExpectations() {
         delegate.resetExpectations();
+    }
+
+    //
+    private TxnAccessor getEmptyTxnAccessor() {
+        TxnAccessor accessor = null;
+        try {
+            // only accessor.congestionExempt() is used in the mono multiplier implementation and that seems like could
+            // be only set for triggered transactions
+            // so using just a dummy accessor
+            accessor = SignedTxnAccessor.from(Bytes.EMPTY.toByteArray());
+        } catch (InvalidProtocolBufferException e) {
+            // this should never happen because we use an empty byte array constant above which should be always valid
+            throw new RuntimeException(e);
+        }
+        return accessor;
     }
 }
