@@ -17,6 +17,7 @@
 package com.hedera.node.app.service.networkadmin.impl.handlers;
 
 import static com.hedera.hapi.node.base.ResponseCodeEnum.NOT_SUPPORTED;
+import static com.hedera.hapi.node.base.ResponseCodeEnum.OK;
 import static java.util.Objects.requireNonNull;
 
 import com.hedera.hapi.node.base.HederaFunctionality;
@@ -60,13 +61,13 @@ public class NetworkUncheckedSubmitHandler implements TransactionHandler {
         throw new HandleException(NOT_SUPPORTED);
     }
 
-    @NonNull
-    @Override
-    public Fees calculateFees(@NonNull final FeeContext feeContext) {
-        requireNonNull(feeContext);
-
-        return feeContext
-                .feeCalculator(SubType.DEFAULT)
-                .legacyCalculate(sigValueObj -> UncheckedSubmitResourceUsage.usageGiven());
-    }
+//(Temp solution) feeCalculator can't be initialized, because "No fee data found for transaction type UNCHECKED_SUBMIT"
+//    @NonNull
+//    @Override
+//    public Fees calculateFees(@NonNull final FeeContext feeContext) {
+//        requireNonNull(feeContext);
+//        return feeContext
+//                .feeCalculator(SubType.DEFAULT)
+//                .legacyCalculate(sigValueObj -> UncheckedSubmitResourceUsage.usageGiven());
+//    }
 }
