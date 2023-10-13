@@ -98,6 +98,7 @@ public class ScheduleCreateTransitionLogic implements TransitionLogic {
     public void doStateTransition() {
         try {
             final var accessor = txnCtx.accessor();
+            log.info("doStateTransition :: {}", accessor.getSignedTxnWrapper());
             transitionFor(accessor.getTxnBytes(), accessor.getSigMap());
         } catch (final Exception e) {
             log.warn(
