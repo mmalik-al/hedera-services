@@ -111,6 +111,9 @@ public class ScheduleCreateTransitionLogic implements TransitionLogic {
         final var idSchedulePair = store.lookupSchedule(bodyBytes);
         @Nullable final var existingScheduleId = idSchedulePair.getLeft();
         final var schedule = idSchedulePair.getRight();
+        log.info("existingScheduleId {}", existingScheduleId);
+        log.info("schedule {}", schedule);
+
         if (null != existingScheduleId) {
             completeContextWith(existingScheduleId, schedule, IDENTICAL_SCHEDULE_ALREADY_CREATED);
             return;
@@ -162,6 +165,7 @@ public class ScheduleCreateTransitionLogic implements TransitionLogic {
         completeContextWith(scheduleId, schedule, finalOutcome == OK ? SUCCESS : finalOutcome);
         sigImpactHistorian.markEntityChanged(scheduleId.getScheduleNum());
         usageLimits.refreshSchedules();
+        log.info("Created scheduleId = {}", scheduleId);
     }
 
     private void completeContextWith(
