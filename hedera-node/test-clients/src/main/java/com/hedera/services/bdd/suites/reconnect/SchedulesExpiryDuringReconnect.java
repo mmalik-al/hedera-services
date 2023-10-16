@@ -155,6 +155,7 @@ public class SchedulesExpiryDuringReconnect extends HapiSuite {
                         sleepFor(Duration.ofSeconds(20).toMillis()),
                         getScheduleInfo(longLastingSchedule)
                                 .setNode(reconnectingNode)
+                                .logging()
                                 .hasScheduledTxnIdSavedBy(longLastingSchedule)
                                 .hasCostAnswerPrecheck(OK),
                         getScheduleInfo(oneOtherSchedule)
