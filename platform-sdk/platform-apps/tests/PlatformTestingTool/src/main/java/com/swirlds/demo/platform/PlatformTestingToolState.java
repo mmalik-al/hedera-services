@@ -1165,12 +1165,13 @@ public class PlatformTestingToolState extends PartialNaryMerkleInternal implemen
                         logger.error(
                                 EXCEPTION.getMarker(),
                                 "Invalid Transaction Signature [status = {}, signatureType = {}, "
-                                        + "publicKey = {}, signature = {}, data = {} ]",
+                                        + "publicKey = {}, signature = {}, data = {}, type = {} ]",
                                 s.getSignatureStatus(),
                                 s.getSignatureType(),
                                 hex(publicKey),
                                 hex(signature),
-                                hex(testTransactionRawBytes));
+                                hex(testTransactionRawBytes),
+                                testTransaction.getBodyCase());
                     } else if (s.getSignatureStatus() != VerificationStatus.VALID && expectingInvalidSignature) {
                         expectedInvalidSignatureCount.incrementAndGet();
                     }
