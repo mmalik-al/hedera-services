@@ -1,7 +1,7 @@
 {
   "payloadConfig": {
 	"appendSig": true,
-	"insertSeq": true,
+	"insertSeq": false,
 	"variedSize": false,
 	"invalidSigRatio": 0.0,
 	"_comment": "payload type TYPE_RANDOM_BYTES for random bytes",
@@ -51,11 +51,6 @@
 	  {
 		"sequentialType": "TYPE_FCM_CREATE_FCQ",
 		"sequentialAmount": 700,
-		"sequentialSize": 100
-	  },
-	  {
-		"sequentialType": "SAVE_EXPECTED_MAP",
-		"sequentialAmount": 1,
 		"sequentialSize": 100
 	  },
 	  {
