@@ -50,7 +50,7 @@
 	"sequentials": [
 	  {
 		"sequentialType": "TYPE_FCM_CREATE_FCQ",
-		"sequentialAmount": 70000,
+		"sequentialAmount": 7000,
 		"sequentialSize": 100
 	  },
 	  {
@@ -60,12 +60,12 @@
 	  },
 	  {
 		"sequentialType": "TYPE_FCM_UPDATE_FCQ",
-		"sequentialAmount": 3500000,
+		"sequentialAmount": 350000,
 		"sequentialSize": 100
 	  },
 	  {
 		"sequentialType": "TYPE_FCM_TRANSFER_FCQ",
-		"sequentialAmount": 300000,
+		"sequentialAmount": 30000,
 		"sequentialSize": 100
 	  }
 	]

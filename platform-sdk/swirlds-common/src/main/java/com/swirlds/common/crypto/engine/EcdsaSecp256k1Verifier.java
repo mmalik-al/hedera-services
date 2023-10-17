@@ -166,7 +166,7 @@ public class EcdsaSecp256k1Verifier {
      * @return true if the signature is valid
      */
     public boolean verify(final byte[] rawSig, final byte[] msg, final byte[] pubKey) {
-        final ThreadLocalCache cache = CACHE.get();
+        final ThreadLocalCache cache = new ThreadLocalCache();
         // convert signature to native format
         final LibSecp256k1.secp256k1_ecdsa_signature nativeSignature = cache.signature;
         final var signatureParseResult =
