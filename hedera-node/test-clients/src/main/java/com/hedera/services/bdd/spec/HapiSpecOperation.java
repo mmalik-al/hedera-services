@@ -255,7 +255,7 @@ public abstract class HapiSpecOperation {
                 return Optional.empty();
             }
             if (verboseLoggingOn) {
-                String message = MessageFormat.format("{0}{1} failed - {2}", spec.logPrefix(), this, t);
+                String message = MessageFormat.format("{0}{1} failed - {2}, trace {} ", spec.logPrefix(), this, t, t.getStackTrace().toString());
                 log.warn(message);
             } else if (!loggingOff) {
                 String message = MessageFormat.format("{0}{1} failed - {2}!", spec.logPrefix(), this, t.getMessage());
