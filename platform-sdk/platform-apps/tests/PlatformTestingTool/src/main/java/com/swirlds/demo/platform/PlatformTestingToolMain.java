@@ -1097,28 +1097,14 @@ public class PlatformTestingToolMain implements SwirldMain {
                     UnsafeMutablePTTStateAccessor.getInstance().getUnsafeMutableState(platform.getSelfId())) {
                 final PlatformTestingToolState state = wrapper.get();
 
-                final String expectedMapFile =
-                        createExpectedMapName(platform.getSelfId().id(), consensusTime);
                 logger.info(
                         LOGM_DEMO_QUORUM,
-                        "Achieved Quorum on ENTER_VALIDATION transaction [ expectedMapFile = {}, consensusTime = {} ]",
-                        expectedMapFile,
+                        "Achieved Quorum on ENTER_VALIDATION transaction [ consensusTime = {} ]",
                         consensusTime);
 
                 VirtualMerkleTransactionHandler.handleExpectedMapValidation(
                         state.getStateExpectedMap(), state.getVirtualMap());
 
-                serialize(
-                        state.getStateExpectedMap().getExpectedMap(),
-                        new File(STORAGE_DIRECTORY),
-                        expectedMapFile,
-                        false);
-
-                logger.info(
-                        LOGM_DEMO_QUORUM,
-                        "Successfully wrote expected map to file [ expectedMapFile = {}, consensusTime = {} ]",
-                        expectedMapFile,
-                        consensusTime);
 
                 submitter.sendTransaction(
                         platform, pttTransactionPool.createControlTranBytes(ControlType.EXIT_VALIDATION));
