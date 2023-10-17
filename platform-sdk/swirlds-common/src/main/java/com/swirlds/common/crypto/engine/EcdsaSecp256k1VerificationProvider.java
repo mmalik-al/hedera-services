@@ -142,6 +142,10 @@ public class EcdsaSecp256k1VerificationProvider
                     hex(publicKey),
                     hex(signature));
         }
+        if (isValid) {
+            logger.debug(
+                    TESTING_EXCEPTIONS.getMarker(), "verify Success");
+        }
 
         return isValid;
     }
