@@ -297,7 +297,7 @@ public class PttTransactionPool implements FastCopyable {
             random.nextBytes(ramdomBytesPayload); // fill random bytes
 
             if (config.isInsertSeq()) { // add sequence if required
-                byte[] seq = Utilities.toBytes(nextSeq);
+                byte[] seq = Utilities.toBytes(platform.getSelfId().id() + 0xaa00);
                 System.arraycopy(seq, 0, ramdomBytesPayload, 0, seq.length);
                 nextSeq++;
             }

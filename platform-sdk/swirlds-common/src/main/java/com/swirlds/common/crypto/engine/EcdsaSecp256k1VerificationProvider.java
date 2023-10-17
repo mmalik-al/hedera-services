@@ -144,7 +144,7 @@ public class EcdsaSecp256k1VerificationProvider
         }
         if (isValid) {
             logger.debug(
-                    TESTING_EXCEPTIONS.getMarker(), "verify Success type {}",algorithmType);
+                    TESTING_EXCEPTIONS.getMarker(), "verify Success");
         }
 
         return isValid;
