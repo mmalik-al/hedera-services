@@ -376,7 +376,7 @@ public class PttTransactionPool implements FastCopyable {
                 TestTransaction.newBuilder().setControlTransaction(msg).build();
 
         byte[] data = testTransaction.toByteArray();
-
+        logger.info(STARTUP.getMarker(), "Control message byte value: {}", hex(data));
         return appendSignature(data, false);
     }
 
