@@ -137,14 +137,14 @@ public class EcdsaSecp256k1VerificationProvider
             logger.debug(
                     TESTING_EXCEPTIONS.getMarker(),
                     "Adv Crypto Subsystem: Signature Verification Failure for signature type {}"
-                            + " [ publicKey = {}, signature = {} ]",
+                            + " [ publicKey = {}, signature = {} message = {}]",
                     algorithmType,
                     hex(publicKey),
-                    hex(signature));
+                    hex(signature), hex(message));
         }
         if (isValid) {
             logger.debug(
-                    TESTING_EXCEPTIONS.getMarker(), "verify Success");
+                    TESTING_EXCEPTIONS.getMarker(), "verify Success message = {}", hex(message));
         }
 
         return isValid;
