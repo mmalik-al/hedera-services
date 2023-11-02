@@ -18,6 +18,7 @@ package com.swirlds.virtual.merkle.reconnect;
 
 import static com.swirlds.common.units.UnitConstants.BYTES_TO_BITS;
 import static com.swirlds.common.units.UnitConstants.MEBIBYTES_TO_BYTES;
+import static com.swirlds.test.framework.TestQualifierTags.ISOLATED;
 import static com.swirlds.test.framework.TestQualifierTags.TIME_CONSUMING;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -248,6 +249,7 @@ class VirtualMapReconnectTest extends VirtualMapReconnectTestBase {
     }
 
     @Test
+    @Tag(ISOLATED)
     @Tags({@Tag("VirtualMerkle"), @Tag("Reconnect")})
     @DisplayName("Teacher is requested to stop teaching after a few attempts")
     void simulateTeacherFallenBehind() {

@@ -27,6 +27,7 @@ import static com.swirlds.platform.state.signed.SignedStateFileUtils.getSignedSt
 import static com.swirlds.platform.state.signed.SignedStateFileUtils.getSignedStatesBaseDirectory;
 import static com.swirlds.platform.state.signed.StateToDiskReason.FATAL_ERROR;
 import static com.swirlds.platform.state.signed.StateToDiskReason.ISS;
+import static com.swirlds.test.framework.TestQualifierTags.ISOLATED;
 import static java.nio.file.Files.exists;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -167,6 +168,7 @@ class SignedStateFileManagerTests {
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
+    @Tag(ISOLATED)
     @DisplayName("Standard Operation Test")
     void standardOperationTest(final boolean successExpected) throws InterruptedException, IOException {
         final TestConfigBuilder configBuilder = new TestConfigBuilder()
@@ -222,6 +224,7 @@ class SignedStateFileManagerTests {
     }
 
     @Test
+    @Tag(ISOLATED)
     @DisplayName("Save Fatal Signed State")
     void saveFatalSignedState() throws InterruptedException, IOException {
         final TestConfigBuilder configBuilder = new TestConfigBuilder()
@@ -265,6 +268,7 @@ class SignedStateFileManagerTests {
     }
 
     @Test
+    @Tag(ISOLATED)
     @DisplayName("Save ISS Signed State")
     void saveISSignedState() throws IOException {
         final TestConfigBuilder configBuilder = new TestConfigBuilder()
@@ -355,6 +359,7 @@ class SignedStateFileManagerTests {
     }
 
     @Test
+    @Tag(ISOLATED)
     @DisplayName("Max Capacity Test")
     void maxCapacityTest() {
         final AtomicInteger statesWritten = new AtomicInteger(0);
@@ -571,6 +576,7 @@ class SignedStateFileManagerTests {
 
     @SuppressWarnings("resource")
     @Test
+    @Tag(ISOLATED)
     @DisplayName("State Deletion Test")
     void stateDeletionTest() throws IOException {
         final Random random = RandomUtils.getRandomPrintSeed();

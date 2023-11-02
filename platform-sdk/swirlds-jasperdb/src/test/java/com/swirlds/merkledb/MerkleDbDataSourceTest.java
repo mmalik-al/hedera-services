@@ -22,6 +22,7 @@ import static com.swirlds.merkledb.MerkleDbTestUtils.checkDirectMemoryIsCleanedU
 import static com.swirlds.merkledb.MerkleDbTestUtils.getDirectMemoryUsedBytes;
 import static com.swirlds.merkledb.MerkleDbTestUtils.hash;
 import static com.swirlds.merkledb.MerkleDbTestUtils.shuffle;
+import static com.swirlds.test.framework.TestQualifierTags.ISOLATED;
 import static com.swirlds.virtualmap.datasource.VirtualDataSource.INVALID_PATH;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -99,6 +100,7 @@ class MerkleDbDataSourceTest {
     // Tests
 
     @ParameterizedTest
+    @Tag(ISOLATED)
     @MethodSource("provideParameters")
     void createAndCheckInternalNodeHashes(final TestType testType, final int hashesRamToDiskThreshold)
             throws IOException, InterruptedException {
@@ -160,6 +162,7 @@ class MerkleDbDataSourceTest {
     }
 
     @ParameterizedTest
+    @Tag(ISOLATED)
     @EnumSource(TestType.class)
     void testRandomHashUpdates(final TestType testType) throws IOException {
         final int testSize = 1000;
@@ -211,6 +214,7 @@ class MerkleDbDataSourceTest {
     }
 
     @ParameterizedTest
+    @Tag(ISOLATED)
     @EnumSource(TestType.class)
     void createAndCheckLeaves(final TestType testType) throws IOException {
         final int count = 10_000;
@@ -306,6 +310,7 @@ class MerkleDbDataSourceTest {
     }
 
     @ParameterizedTest
+    @Tag(ISOLATED)
     @EnumSource(TestType.class)
     void moveLeaf(final TestType testType) throws IOException {
         final int incFirstLeafPath = 1;
@@ -348,6 +353,7 @@ class MerkleDbDataSourceTest {
     }
 
     @Test
+    @Tag(ISOLATED)
     void preservesInterruptStatusWhenInterruptedSavingRecords() throws IOException, InterruptedException {
         final MerkleDbDataSource<VirtualLongKey, ExampleByteArrayVirtualValue> dataSource =
                 createDataSource(testDirectory, "test6", TestType.fixed_fixed, 1000);
@@ -377,6 +383,7 @@ class MerkleDbDataSourceTest {
     }
 
     @ParameterizedTest
+    @Tag(ISOLATED)
     @EnumSource(TestType.class)
     void createCloseSnapshotCheckDelete(final TestType testType) throws IOException {
         final int count = 10_000;
@@ -456,6 +463,7 @@ class MerkleDbDataSourceTest {
     }
 
     @Test
+    @Tag(ISOLATED)
     void canConstructWithOnDiskInternalHashStore() throws InterruptedException {
         final long finiteInMemHashThreshold = 1_000_000;
         assertDoesNotThrow(
@@ -469,6 +477,7 @@ class MerkleDbDataSourceTest {
     }
 
     @Test
+    @Tag(ISOLATED)
     void canConstructWithNoRamInternalHashStore() {
         assertDoesNotThrow(
                 () -> createDataSource(testDirectory, "test10", TestType.fixed_fixed, 1000, 0)
@@ -480,6 +489,7 @@ class MerkleDbDataSourceTest {
     }
 
     @Test
+    @Tag(ISOLATED)
     void canConstructStandardStoreWithMergingDisabled() {
         assertDoesNotThrow(
                 () -> TestType.fixed_fixed
@@ -493,6 +503,7 @@ class MerkleDbDataSourceTest {
     }
 
     @ParameterizedTest
+    @Tag(ISOLATED)
     @EnumSource(TestType.class)
     void testKeyIndexTypes(final TestType testType) throws Exception {
         final MerkleDbDataSource<VirtualLongKey, ExampleByteArrayVirtualValue> dataSource =

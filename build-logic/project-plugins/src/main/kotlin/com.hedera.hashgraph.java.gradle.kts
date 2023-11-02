@@ -102,6 +102,7 @@ testing {
                     options {
                         this as JUnitPlatformOptions
                         excludeTags(
+                            "ISOLATED",
                             "TIME_CONSUMING",
                             "AT_SCALE",
                             "REMOTE_ONLY",
@@ -116,6 +117,28 @@ testing {
                     jvmArgs("-XX:ActiveProcessorCount=16")
                     // Can be useful to set in some cases
                     // testLogging.showStandardStreams = true
+                }
+            }
+
+            // Task that is not running in parallel with any 'test' or other 'isolatedTest' task
+            tasks.register<Test>("isolatedTest") {
+                testClassesDirs = sources.output.classesDirs
+                classpath = sources.runtimeClasspath
+
+                useJUnitPlatform { includeTags("ISOLATED") }
+                maxHeapSize = "4096m"
+                jvmArgs("-XX:ActiveProcessorCount=16")
+
+                val allSubProjectsWithTests =
+                    rootProject.subprojects
+                        .filter { File(it.projectDir, "src/test").exists() }
+                        .map { it.name }
+                        .sorted()
+                allSubProjectsWithTests.forEach { mustRunAfter(":$it:test") }
+
+                val myIndex = allSubProjectsWithTests.indexOf(project.name)
+                if (myIndex > 0) {
+                    mustRunAfter(":${allSubProjectsWithTests[myIndex - 1]}:isolatedTest")
                 }
             }
 
@@ -167,7 +190,7 @@ tasks.jacocoTestReport {
     executionData.from(
         allTestTasks.map { it.extensions.getByType<JacocoTaskExtension>().destinationFile }
     )
-    shouldRunAfter(allTestTasks)
+    mustRunAfter(allTestTasks)
 }
 
 testlogger {
@@ -185,7 +208,7 @@ tasks.assemble {
 }
 
 tasks.check {
-    // 'check' runs all checks, including all test checks
+    dependsOn(tasks.named("isolatedTest"))
     dependsOn(tasks.jacocoTestReport)
 }
 

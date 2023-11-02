@@ -20,6 +20,7 @@ import static com.swirlds.common.test.fixtures.AssertionUtils.assertEventuallyEq
 import static com.swirlds.common.test.fixtures.AssertionUtils.assertEventuallyFalse;
 import static com.swirlds.common.test.fixtures.AssertionUtils.assertEventuallyTrue;
 import static com.swirlds.common.threading.manager.AdHocThreadManager.getStaticThreadManager;
+import static com.swirlds.test.framework.TestQualifierTags.ISOLATED;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -262,6 +263,7 @@ class StoppableThreadTests {
     }
 
     @Test
+    @Tag(ISOLATED)
     @Tag(TestTypeTags.FUNCTIONAL)
     @Tag(TestComponentTags.THREADING)
     @DisplayName("Pause Test")
@@ -448,6 +450,7 @@ class StoppableThreadTests {
     }
 
     @Test
+    @Tag(ISOLATED)
     @DisplayName("Max Rate Test")
     void maxRateTest() throws InterruptedException {
         final AtomicInteger counter = new AtomicInteger(0);
@@ -649,6 +652,7 @@ class StoppableThreadTests {
     }
 
     @Test
+    @Tag(ISOLATED)
     @DisplayName("Pause Then Stop Test")
     void pauseThenStopTest() throws InterruptedException {
         final AtomicInteger count = new AtomicInteger();
@@ -679,6 +683,7 @@ class StoppableThreadTests {
     }
 
     @Test
+    @Tag(ISOLATED)
     @DisplayName("Join Before Start Test")
     void joinBeforeStartTest() throws InterruptedException {
         final StoppableThread stoppableThread = new StoppableThreadConfiguration<>(getStaticThreadManager())
@@ -700,6 +705,7 @@ class StoppableThreadTests {
     }
 
     @Test
+    @Tag(ISOLATED)
     @DisplayName("Join Before Start Seed Test")
     void joinBeforeStartSeedTest() throws InterruptedException {
         final StoppableThread stoppableThread1 = new StoppableThreadConfiguration<>(getStaticThreadManager())
