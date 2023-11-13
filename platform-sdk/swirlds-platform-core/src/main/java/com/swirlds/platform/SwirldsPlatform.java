@@ -86,6 +86,7 @@ import com.swirlds.platform.components.transaction.system.PreconsensusSystemTran
 import com.swirlds.platform.components.wiring.ManualWiring;
 import com.swirlds.platform.config.ThreadConfig;
 import com.swirlds.platform.crypto.CryptoStatic;
+import com.swirlds.platform.crypto.PlatformSigner;
 import com.swirlds.platform.dispatch.DispatchBuilder;
 import com.swirlds.platform.dispatch.DispatchConfiguration;
 import com.swirlds.platform.dispatch.triggers.flow.DiskStateLoadedTrigger;
@@ -152,12 +153,16 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -320,6 +325,8 @@ public class SwirldsPlatform implements Platform, Startable {
             @NonNull final SignedState initialState,
             @Nullable final AddressBook previousAddressBook,
             @NonNull final EmergencyRecoveryManager emergencyRecoveryManager) {
+
+        roundTripSignatureTest(initialState.getAddressBook(), id, crypto);
 
         this.platformContext = Objects.requireNonNull(platformContext, "platformContext");
         final Time time = Time.getCurrent();
@@ -688,6 +695,37 @@ public class SwirldsPlatform implements Platform, Startable {
         GuiPlatformAccessor.getInstance().setShadowGraph(selfId, shadowGraph);
         GuiPlatformAccessor.getInstance().setStateManagementComponent(selfId, stateManagementComponent);
         GuiPlatformAccessor.getInstance().setConsensusReference(selfId, consensusRef);
+    }
+
+    /**
+     * Make sure data signed with our private key is valid when verified with our public key.
+     */
+    private static void roundTripSignatureTest(
+            @NonNull final AddressBook addressBook,
+            @NonNull final NodeId selfId,
+            @NonNull final Crypto crypto) {
+
+        final byte[] data = new byte[1024];
+        final Random random = new Random();
+        random.nextBytes(data);
+        final Signature signature;
+        try {
+            signature = new PlatformSigner(crypto.getKeysAndCerts()).sign(data);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        } catch (NoSuchProviderException e) {
+            throw new RuntimeException(e);
+        } catch (InvalidKeyException e) {
+            throw new RuntimeException(e);
+        }
+        final boolean isValid = signature.verifySignature(data,
+                addressBook.getAddress(selfId).getSigPublicKey());
+        if (isValid) {
+            logger.info(STARTUP.getMarker(), "Round trip signature test passed");
+        } else {
+            logger.error(EXCEPTION.getMarker(), "Round trip signature test failed, "
+                    + "data signed with private key could not be verified with public key");
+        }
     }
 
     /**
@@ -1205,8 +1243,8 @@ public class SwirldsPlatform implements Platform, Startable {
     }
 
     /**
-     * Clears the preconsensus event stream if a software upgrade has occurred and the configuration specifies that
-     * the stream should be cleared on software upgrade.
+     * Clears the preconsensus event stream if a software upgrade has occurred and the configuration specifies that the
+     * stream should be cleared on software upgrade.
      *
      * @param softwareUpgrade true if a software upgrade has occurred
      * @param fileManager     the preconsensus event file manager

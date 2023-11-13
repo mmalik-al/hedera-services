@@ -18,6 +18,7 @@ package com.swirlds.platform.crypto;
 
 import static com.swirlds.common.utility.CommonUtils.nameToAlias;
 import static com.swirlds.logging.LogMarker.EXCEPTION;
+import static com.swirlds.logging.LogMarker.STARTUP;
 import static com.swirlds.platform.crypto.CryptoConstants.PUBLIC_KEYS_FILE;
 
 import com.swirlds.common.crypto.CryptographyException;
@@ -25,6 +26,7 @@ import com.swirlds.common.system.NodeId;
 import com.swirlds.common.system.address.Address;
 import com.swirlds.common.system.address.AddressBook;
 import com.swirlds.common.utility.CommonUtils;
+import com.swirlds.common.utility.NonCryptographicHashing;
 import com.swirlds.logging.LogMarker;
 import com.swirlds.platform.state.address.AddressBookNetworkUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
@@ -269,6 +271,23 @@ public final class CryptoStatic {
     }
 
     /**
+     * Log the hashed contents of the file. This is debug code only and is not production safe.
+     * DO NOT RUN THIS IN A PRODUCTION ENVIRONMENT!
+     */
+    public static void logKeyFileInfo(@NonNull final Path file) {
+        logger.info(STARTUP.getMarker(), "Loading keys from " + file);
+
+        try {
+            final byte[] bytes = new FileInputStream(file.toFile()).readAllBytes();
+            final long hash = NonCryptographicHashing.hash64(bytes);
+            logger.info(STARTUP.getMarker(), "Hash of " + file + " is " + hash);
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
      * Loads all data from a .pfx file into a KeyStore
      *
      * @param file
@@ -283,6 +302,9 @@ public final class CryptoStatic {
      */
     public static KeyStore loadKeys(final Path file, final char[] password)
             throws KeyStoreException, KeyLoadingException {
+
+        logKeyFileInfo(file);
+
         final KeyStore store = createEmptyTrustStore();
         try (final FileInputStream fis = new FileInputStream(file.toFile())) {
             store.load(fis, password);

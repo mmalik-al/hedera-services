@@ -97,20 +97,20 @@ public final class CryptoSetup {
                     CommonUtils.tellUserConsole("Reading crypto keys from the files here:   "
                             + list.filter(path -> path.getFileName().endsWith("pfx"))
                                     .toList());
-                    logger.debug(STARTUP.getMarker(), "About start loading keys");
+                    logger.info(STARTUP.getMarker(), "About start loading keys");
                     keysAndCerts = CryptoStatic.loadKeysAndCerts(
                             addressBook,
                             pathsConfig.getKeysDirPath(),
                             cryptoConfig.keystorePassword().toCharArray());
-                    logger.debug(STARTUP.getMarker(), "Done loading keys");
+                    logger.info(STARTUP.getMarker(), "Done loading keys");
                 }
             } else {
                 // if there are no keys on the disk, then create our own keys
                 CommonUtils.tellUserConsole(
                         "Creating keys, because there are no files in " + pathsConfig.getKeysDirPath());
-                logger.debug(STARTUP.getMarker(), "About to start creating generating keys");
+                logger.info(STARTUP.getMarker(), "About to start creating generating keys");
                 keysAndCerts = CryptoStatic.generateKeysAndCerts(addressBook, cryptoThreadPool);
-                logger.debug(STARTUP.getMarker(), "Done generating keys");
+                logger.info(STARTUP.getMarker(), "Done generating keys");
             }
         } catch (final InterruptedException
                 | ExecutionException
@@ -136,13 +136,13 @@ public final class CryptoSetup {
 
         keysAndCerts.forEach((nodeId, keysAndCertsForNode) -> {
             if (keysAndCertsForNode == null) {
-                logger.error(CERTIFICATES.getMarker(), "No keys and certs for node {}", nodeId);
+                logger.error(STARTUP.getMarker(), "No keys and certs for node {}", nodeId);
                 return;
             }
-            logger.debug(CERTIFICATES.getMarker(), "Node ID: {}", nodeId);
-            logger.debug(CERTIFICATES.getMarker(), msg, keysAndCertsForNode.sigCert());
-            logger.debug(CERTIFICATES.getMarker(), msg, keysAndCertsForNode.encCert());
-            logger.debug(CERTIFICATES.getMarker(), msg, keysAndCertsForNode.agrCert());
+            logger.info(STARTUP.getMarker(), "Node ID: {}", nodeId);
+            logger.info(STARTUP.getMarker(), msg, keysAndCertsForNode.sigCert());
+            logger.info(STARTUP.getMarker(), msg, keysAndCertsForNode.encCert());
+            logger.info(STARTUP.getMarker(), msg, keysAndCertsForNode.agrCert());
             cryptoMap.put(nodeId, new Crypto(keysAndCertsForNode, cryptoThreadPool));
         });
 

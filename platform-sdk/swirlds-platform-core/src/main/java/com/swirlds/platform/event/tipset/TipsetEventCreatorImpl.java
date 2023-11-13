@@ -18,6 +18,7 @@ package com.swirlds.platform.event.tipset;
 
 import static com.swirlds.common.system.NodeId.UNDEFINED_NODE_ID;
 import static com.swirlds.logging.LogMarker.EXCEPTION;
+import static com.swirlds.logging.LogMarker.STARTUP;
 import static com.swirlds.platform.event.EventConstants.CREATOR_ID_UNDEFINED;
 import static com.swirlds.platform.event.EventConstants.GENERATION_UNDEFINED;
 import static com.swirlds.platform.event.tipset.TipsetAdvancementWeight.ZERO_ADVANCEMENT_WEIGHT;
@@ -36,6 +37,7 @@ import com.swirlds.common.system.events.BaseEventHashedData;
 import com.swirlds.common.system.events.BaseEventUnhashedData;
 import com.swirlds.common.utility.throttle.RateLimitedLogger;
 import com.swirlds.platform.components.transaction.TransactionSupplier;
+import com.swirlds.platform.crypto.CryptoStatic;
 import com.swirlds.platform.event.EventDescriptor;
 import com.swirlds.platform.event.EventUtils;
 import com.swirlds.platform.event.GossipEvent;
@@ -387,7 +389,26 @@ public class TipsetEventCreatorImpl implements TipsetEventCreator {
         lastSelfEventCreationTime = event.getHashedData().getTimeCreated();
         lastSelfEventTransactionCount = event.getHashedData().getTransactions().length;
 
+        validateSelfEventSignature(event);
+
         return event;
+    }
+
+    /**
+     * Make sure that the event we just created has a valid signature.
+     */
+    private void validateSelfEventSignature(@Nullable final GossipEvent event) {
+        final boolean eventIsValid = CryptoStatic.verifySignature(
+                event.getHashedData().getHash().getValue(),
+                event.getUnhashedData().getSignature(),
+                addressBook.getAddress(selfId).getSigPublicKey());
+
+        if (!eventIsValid) {
+            logger.error(
+                    EXCEPTION.getMarker(),
+                    "Self event signature is invalid: {}",
+                    event);
+        }
     }
 
     /**
