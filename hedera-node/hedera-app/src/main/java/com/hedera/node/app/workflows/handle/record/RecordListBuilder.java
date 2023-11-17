@@ -263,18 +263,21 @@ public final class RecordListBuilder {
         }
 
         // Make sure we have not created so many that we have run out of slots.
-        final var childCount = childRecordBuilders.size();
-        final var consensusConfig = configuration.getConfigData(ConsensusConfig.class);
+        final int childCount = childRecordBuilders.size();
+        final ConsensusConfig consensusConfig = configuration.getConfigData(ConsensusConfig.class);
         if (childCount >= consensusConfig.handleMaxFollowingRecords()) {
             throw new HandleException(ResponseCodeEnum.MAX_CHILD_RECORDS_EXCEEDED);
         }
 
-        // The consensus timestamp of the first item in the child list is T+1, where T is the time of the user tx
-        final var parentConsensusTimestamp = userTxnRecordBuilder.consensusNow();
-        final var prevConsensusNow = childRecordBuilders.isEmpty()
-                ? userTxnRecordBuilder.consensusNow()
+        // The consensus timestamp of the first item in the child list is T+K (in nanoseconds),
+        // where T is the time of the user tx and K is the maximum number of "preceding" records
+        // defined for the current configuration.
+        final long maxPrecedingRecords = consensusConfig.handleMaxPrecedingRecords();
+        final Instant parentConsensusTimestamp = userTxnRecordBuilder.consensusNow();
+        final Instant prevConsensusNow = childRecordBuilders.isEmpty()
+                ? userTxnRecordBuilder.consensusNow().plusNanos(maxPrecedingRecords)
                 : childRecordBuilders.get(childRecordBuilders.size() - 1).consensusNow();
-        final var consensusNow = prevConsensusNow.plusNanos(1L);
+        final Instant consensusNow = prevConsensusNow.plusNanos(1L);
         // Note we do not repeat exchange rates for child transactions
         final var recordBuilder = new SingleTransactionRecordBuilderImpl(consensusNow, reversingBehavior, customizer);
         // Only set parent consensus timestamp for child records if one is not provided
