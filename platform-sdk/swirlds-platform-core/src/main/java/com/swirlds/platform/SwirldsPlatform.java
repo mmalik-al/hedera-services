@@ -32,7 +32,6 @@ import static com.swirlds.platform.state.iss.ConsensusHashManager.DO_NOT_IGNORE_
 import com.swirlds.base.state.Startable;
 import com.swirlds.base.time.Time;
 import com.swirlds.base.utility.Pair;
-import com.swirlds.common.config.BasicConfig;
 import com.swirlds.common.config.ConsensusConfig;
 import com.swirlds.common.config.EventConfig;
 import com.swirlds.common.config.StateConfig;
@@ -371,9 +370,8 @@ public class SwirldsPlatform implements Platform {
         this.currentAddressBook = initialState.getAddressBook();
 
         final SignedStateNexus emergencyState = new SignedStateNexus();
-        final Consumer<PlatformStatus> statusChangeConsumer = s->{
-            notificationEngine.dispatch(
-                    PlatformStatusChangeListener.class, new PlatformStatusChangeNotification(s));
+        final Consumer<PlatformStatus> statusChangeConsumer = s -> {
+            notificationEngine.dispatch(PlatformStatusChangeListener.class, new PlatformStatusChangeNotification(s));
             emergencyState.clear();
         };
         platformStatusManager =
