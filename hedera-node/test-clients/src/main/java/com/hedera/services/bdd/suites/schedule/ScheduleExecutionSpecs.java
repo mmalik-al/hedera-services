@@ -1506,7 +1506,7 @@ public class ScheduleExecutionSpecs extends HapiSuite {
                         .hasKnownStatus(UNRESOLVABLE_REQUIRED_SIGNERS));
     }
 
-    // @todo('9975') Need to work out why this does not actually execute
+    @HapiTest
     private HapiSpec executionTriggersOnceTopicHasSatisfiedSubmitKey() {
         String adminKey = ADMIN;
         String submitKey = "submit";
@@ -1544,7 +1544,7 @@ public class ScheduleExecutionSpecs extends HapiSuite {
                         getTopicInfo(mutableTopic).hasSeqNo(1L));
     }
 
-    // @todo('9975') Need to work out why this does not actually execute
+    @HapiTest
     private HapiSpec executionTriggersWithWeirdlyRepeatedKey() {
         String schedule = "dupKeyXfer";
 
@@ -1844,7 +1844,7 @@ public class ScheduleExecutionSpecs extends HapiSuite {
                         }));
     }
 
-    // @todo('9975') Need to work out why this does not actually execute
+    @HapiTest
     private HapiSpec executionWithCryptoSenderDeletedFails() {
         long noBalance = 0L;
         long senderBalance = 100L;
@@ -1880,7 +1880,6 @@ public class ScheduleExecutionSpecs extends HapiSuite {
                         }));
     }
 
-    // ExecutionWithTokenInsufficientAccountBalanceFails
     @HapiTest
     private HapiSpec executionWithTokenInsufficientAccountBalanceFails() {
         String xToken = "XXX";
