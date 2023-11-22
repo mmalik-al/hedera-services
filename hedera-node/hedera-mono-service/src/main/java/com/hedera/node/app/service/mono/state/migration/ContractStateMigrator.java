@@ -24,12 +24,14 @@ import static java.util.Objects.requireNonNull;
 import com.hedera.hapi.node.state.contract.SlotKey;
 import com.hedera.hapi.node.state.contract.SlotValue;
 import com.hedera.node.app.service.mono.state.adapters.VirtualMapLike;
+import com.hedera.node.app.service.mono.state.migration.internal.ContractMigrationValidationCounters;
 import com.hedera.node.app.service.mono.state.virtual.ContractKey;
 import com.hedera.node.app.service.mono.state.virtual.IterableContractValue;
 import com.hedera.node.app.service.mono.utils.NonAtomicReference;
 import com.hedera.node.app.spi.state.WritableKVState;
 import com.hedera.pbj.runtime.io.buffer.Bytes;
 import com.swirlds.common.threading.interrupt.InterruptableConsumer;
+import com.swirlds.common.threading.interrupt.InterruptableSupplier;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -38,10 +40,6 @@ import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentHashMap.KeySetView;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -54,10 +52,13 @@ public class ContractStateMigrator {
 
     /**
      * The actual migration routine, called by the thing that migrates all the stores
+     *
+     * Adds the migrated slots to `toState`.  Caller is responsible for supplying the
+     * state to write to ... and for committing it after the transform is done.
      */
     public static void migrateFromContractStoreVirtualMap(
             @NonNull final VirtualMapLike<ContractKey, IterableContractValue> fromState,
-            @NonNull WritableKVState<SlotKey, SlotValue> toState) {
+            @NonNull final WritableKVState<SlotKey, SlotValue> toState) {
         requireNonNull(fromState);
         requireNonNull(toState);
 
@@ -74,15 +75,13 @@ public class ContractStateMigrator {
 
     static final int THREAD_COUNT = 8; // TODO: is there a configuration option good for this?
     static final int MAXIMUM_SLOTS_IN_FLIGHT = 1_000_000; // This holds both mainnet and testnet (at this time, 2023-11)
-    static final int DISTINCT_CONTRACTS_ESTIMATE = 10_000;
     static final String LOG_CAPTION = "contract-store mono-to-modular migration";
-
-    static final ContractSlotLocal SENTINEL = new ContractSlotLocal(0L, new int[8], new byte[32], null, null);
 
     final VirtualMapLike<ContractKey, IterableContractValue> fromState;
     final WritableKVState<SlotKey, SlotValue> toState;
 
-    final Counters counters = Counters.create();
+    boolean doValidation;
+    final ContractMigrationValidationCounters counters;
 
     ContractStateMigrator(
             @NonNull final VirtualMapLike<ContractKey, IterableContractValue> fromState,
@@ -91,6 +90,12 @@ public class ContractStateMigrator {
         requireNonNull(toState);
         this.fromState = fromState;
         this.toState = toState;
+        this.doValidation = true;
+        this.counters = ContractMigrationValidationCounters.create();
+    }
+
+    void setDoingValidation(final boolean doValidation) {
+        this.doValidation = doValidation;
     }
 
     /**
@@ -105,47 +110,22 @@ public class ContractStateMigrator {
 
         requireNonNull(completedProcesses.get(), "must have valid completed processes set at this point");
 
-        // All that follows is validation that all processing completed and sanity checks pass
-
-        if (completedProcesses.get().size()
-                != EnumSet.allOf(CompletedProcesses.class).size()) {
-            if (!completedProcesses.get().contains(CompletedProcesses.SOURCING))
-                validationsFailed.add("Sourcing process didn't finish");
-            if (!completedProcesses.get().contains(CompletedProcesses.SINKING))
-                validationsFailed.add("Sinking process didn't finish");
-        }
-
-        final var fromSize = fromState.size();
-        if (fromSize != counters.slotsSourced().get()
-                || fromSize != counters.slotsSunk().get()
-                || fromSize != toState.size()) {
-            validationsFailed.add(
-                    "counters of slots processed don't match: %d source size, %d #slots sourced, %d slots sunk, %d final destination size"
-                            .formatted(
-                                    fromSize,
-                                    counters.slotsSourced().get(),
-                                    counters.slotsSunk().get(),
-                                    toState.size()));
-        }
-
-        final var nContracts = counters.contracts().get().size();
-        if (nContracts != counters.nNullPrevs().get()
-                || nContracts != counters.nNullNexts().get()) {
-            validationsFailed.add(
-                    "distinct contracts doesn't match #null prev links and/or #null next links: %d contract, %d null prevs, %d null nexts"
-                            .formatted(
-                                    nContracts,
-                                    counters.nNullPrevs().get(),
-                                    counters.nNullNexts().get()));
+        if (doValidation) {
+            validationsFailed.addAll(validateTransform(completedProcesses.get()));
         }
     }
 
     /**
-     * The intermediate representation of a contract slot (K/V pair, plus prev/next linked list references.
+     * The intermediate representation of a contract slot (K/V pair, plus prev/next linked list references).
      */
     @SuppressWarnings("java:S6218") // should overload equals/hashcode  - but will never test for equality or hash this
-    record ContractSlotLocal(long contractId, @NonNull int[] key, @NonNull byte[] value, int[] prev, int[] next) {
-        ContractSlotLocal {
+    private record ContractSlotLocal(
+            long contractId, @NonNull int[] key, @NonNull byte[] value, int[] prev, int[] next) {
+
+        public static final ContractSlotLocal SENTINEL =
+                new ContractSlotLocal(0L, new int[8], new byte[32], null, null);
+
+        private ContractSlotLocal {
             requireNonNull(key);
             requireNonNull(value);
             validateArgument(key.length == 8, "wrong length key");
@@ -154,51 +134,8 @@ public class ContractStateMigrator {
             if (next != null) validateArgument(next.length == 8, "wrong length next link");
         }
 
-        ContractSlotLocal(@NonNull final ContractKey k, @NonNull final IterableContractValue v) {
+        public ContractSlotLocal(@NonNull final ContractKey k, @NonNull final IterableContractValue v) {
             this(k.getContractId(), k.getKey(), v.getValue(), v.getExplicitPrevKey(), v.getExplicitNextKey());
-        }
-    }
-
-    /**
-     * Various counters used to perform final validations on the completed transform.
-     *
-     * The counters used by the sink process need not actually be atomic at this time, as the sink process is single
-     * threaded.  But IMO it is more consistent and thus easier to read to treat _all_ of the counters the same.
-     */
-    record Counters(
-            @NonNull AtomicInteger slotsSourced,
-            @NonNull AtomicInteger slotsSunk,
-            @NonNull AtomicReference<KeySetView<Long, Boolean>> contracts,
-            @NonNull AtomicInteger nNullPrevs,
-            @NonNull AtomicInteger nNullNexts) {
-        @NonNull
-        static Counters create() {
-            return new Counters(
-                    new AtomicInteger(),
-                    new AtomicInteger(),
-                    new AtomicReference<>(ConcurrentHashMap.newKeySet(DISTINCT_CONTRACTS_ESTIMATE)),
-                    new AtomicInteger(),
-                    new AtomicInteger());
-        }
-
-        void sourceOne() {
-            slotsSourced.incrementAndGet();
-        }
-
-        void sinkOne() {
-            slotsSunk.incrementAndGet();
-        }
-
-        void addContract(long cid) {
-            contracts.get().add(cid);
-        }
-
-        void addNullPrev() {
-            nNullPrevs.incrementAndGet();
-        }
-
-        void addNullNext() {
-            nNullNexts.incrementAndGet();
         }
     }
 
@@ -221,17 +158,12 @@ public class ContractStateMigrator {
         // accumulate everything in the fromStore in the queue before sinking anything.
 
         CompletableFuture<Void> processSlotQueue =
-                CompletableFuture.runAsync(() -> iterateOverQueuedSlots((slotQueue)));
+                CompletableFuture.runAsync(() -> iterateOverQueuedSlots(slotQueue::take));
 
         final var completedTasks = EnumSet.noneOf(CompletedProcesses.class);
 
         boolean didCompleteSourcing = iterateOverCurrentData(slotQueue::put);
-        try {
-            slotQueue.put(SENTINEL);
-        } catch (InterruptedException ex) { // TODO: This InterruptedException can be ignored, I think; correct?
-            log.error(LOG_CAPTION + ": interrupt when sourcing slots", ex);
-            didCompleteSourcing = false;
-        }
+
         if (didCompleteSourcing) completedTasks.add(CompletedProcesses.SOURCING);
 
         boolean didCompleteSinking = true;
@@ -253,20 +185,17 @@ public class ContractStateMigrator {
      * This is single-threaded.  (But does operate concurrently with sourcing.)
      */
     @SuppressWarnings("java:S2142") // must rethrow InterruptedException - Sonar doesn't understand wrapping it to throw
-    void iterateOverQueuedSlots(@NonNull final ArrayBlockingQueue<ContractSlotLocal> slotQueue) {
-        requireNonNull(slotQueue);
-
-        // TODO: Consider passing this an InterruptableSupplier, not the queue directly.  See how
-        // `iterateOverCurrentData` takes a InterruptableConsumer.
+    void iterateOverQueuedSlots(@NonNull final InterruptableSupplier<ContractSlotLocal> slotSource) {
+        requireNonNull(slotSource);
 
         while (true) {
             final ContractSlotLocal slot;
             try {
-                slot = slotQueue.take();
+                slot = slotSource.get();
             } catch (InterruptedException e) {
                 throw new CompletionException(e);
             }
-            if (slot == SENTINEL) break;
+            if (slot == ContractSlotLocal.SENTINEL) break;
 
             final var key = SlotKey.newBuilder()
                     .contractNumber(slot.contractId())
@@ -280,10 +209,14 @@ public class ContractStateMigrator {
             toState.put(key, value);
 
             // Some counts to provide some validation
-            counters.sinkOne();
-            counters.addContract(slot.contractId());
-            if (slot.prev() == null) counters.addNullPrev();
-            if (slot.next() == null) counters.addNullNext();
+            if (doValidation) {
+                counters.sinkOne();
+                counters.addContract(key.contractNumber());
+                if (value.previousKey() == Bytes.EMPTY) counters.addMissingPrev();
+                else counters.xorAnotherLink(value.previousKey().toByteArray());
+                if (value.nextKey() == Bytes.EMPTY) counters.addMissingNext();
+                else counters.xorAnotherLink(value.nextKey().toByteArray());
+            }
         }
     }
 
@@ -304,9 +237,12 @@ public class ContractStateMigrator {
                         slotSink.accept(new ContractSlotLocal(contractKey, iterableContractValue));
 
                         // Some counts to provide some validation
-                        counters.sourceOne();
+                        if (doValidation) {
+                            counters.sourceOne();
+                        }
                     },
                     THREAD_COUNT);
+            slotSink.accept(ContractSlotLocal.SENTINEL);
         } catch (final InterruptedException ex) {
             currentThread().interrupt();
             didRunToCompletion = false;
@@ -314,24 +250,74 @@ public class ContractStateMigrator {
         return didRunToCompletion;
     }
 
+    @NonNull
+    List<String> validateTransform(@NonNull final EnumSet<CompletedProcesses> completedProcesses) {
+        requireNonNull(completedProcesses);
+
+        final var validationsFailed = new ArrayList<String>();
+
+        // All that follows is validation that all processing completed and sanity checks pass
+        if (doValidation) {
+            if (completedProcesses.size()
+                    != EnumSet.allOf(CompletedProcesses.class).size()) {
+                if (!completedProcesses.contains(CompletedProcesses.SOURCING))
+                    validationsFailed.add("Sourcing process didn't finish");
+                if (!completedProcesses.contains(CompletedProcesses.SINKING))
+                    validationsFailed.add("Sinking process didn't finish");
+            }
+
+            final var fromSize = fromState.size();
+            if (fromSize != counters.slotsSourced().get()
+                    || fromSize != counters.slotsSunk().get()
+                    || fromSize != toState.size()) {
+                validationsFailed.add(
+                        "counters of slots processed don't match: %d source size, %d #slots sourced, %d slots sunk, %d final destination size"
+                                .formatted(
+                                        fromSize,
+                                        counters.slotsSourced().get(),
+                                        counters.slotsSunk().get(),
+                                        toState.size()));
+            }
+
+            final var nContracts = counters.contracts().get().size();
+            if (nContracts != counters.nMissingPrevs().get()
+                    || nContracts != counters.nMissingNexts().get()) {
+                validationsFailed.add(
+                        "distinct contracts doesn't match #null prev links and/or #null next links: %d contract, %d null prevs, %d null nexts"
+                                .formatted(
+                                        nContracts,
+                                        counters.nMissingPrevs().get(),
+                                        counters.nMissingNexts().get()));
+            }
+
+            if (!counters.runningXorOfLinksIsZero()) {
+                validationsFailed.add("prev/next links (over all contracts) aren't properly paired");
+            }
+        }
+
+        return validationsFailed;
+    }
+
     //    @NonNull
     //    static WritableKVState<SlotKey, SlotValue> getNewContractStore() {
     //        return new InMemoryWritableKVState<SlotKey, SlotValue>();
     //    }
 
-    /** Convert int[] to byte[] and then to Bytes. If argument is null then return value is null. */
+    /** Convert int[] to byte[] and then to Bytes. If argument is null or 0-length then return `Bytes.EMPTY`. */
     static Bytes bytesFromInts(final int[] ints) {
-        if (ints == null) return null;
+        if (ints == null) return Bytes.EMPTY;
+        if (ints.length == 0) return Bytes.EMPTY;
 
         // N.B.: `ByteBuffer.allocate` creates the right `byte[]`.  `asIntBuffer` will share it, so no extra copy
-        // there.  Finally, `Bytes.wrap` will wrap it so no extra copy there either.
+        // there.  Finally, `Bytes.wrap` will wrap it - and end up owning it once `buf` goes out of scope - so no extra
+        // copy there either.
         final ByteBuffer buf = ByteBuffer.allocate(32);
         buf.asIntBuffer().put(ints);
         return Bytes.wrap(buf.array());
     }
 
     /** Validate an argument by throwing `IllegalArgumentException` if the test fails */
-    static void validateArgument(final boolean b, @NonNull final String msg) {
+    public static void validateArgument(final boolean b, @NonNull final String msg) {
         if (!b) throw new IllegalArgumentException(msg);
     }
 
