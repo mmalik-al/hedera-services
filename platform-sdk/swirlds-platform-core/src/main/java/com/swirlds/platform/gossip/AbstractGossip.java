@@ -220,6 +220,7 @@ public abstract class AbstractGossip implements ConnectionTracker, Gossip {
                 new ReconnectLearnerFactory(
                         platformContext,
                         threadManager,
+                        statusActionSubmitter,
                         addressBook,
                         reconnectConfig.asyncStreamTimeout(),
                         reconnectMetrics),

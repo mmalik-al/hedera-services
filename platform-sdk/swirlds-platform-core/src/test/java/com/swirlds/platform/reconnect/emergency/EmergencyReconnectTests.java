@@ -241,6 +241,7 @@ class EmergencyReconnectTests {
                 new ReconnectLearnerFactory(
                         TestPlatformContextBuilder.create().build(),
                         getStaticThreadManager(),
+                        mock(StatusActionSubmitter.class),
                         addressBook,
                         Duration.of(100_000, ChronoUnit.MILLIS),
                         mock(ReconnectMetrics.class)),

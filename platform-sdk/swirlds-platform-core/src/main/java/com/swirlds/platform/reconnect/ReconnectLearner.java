@@ -25,6 +25,8 @@ import com.swirlds.common.io.streams.MerkleDataOutputStream;
 import com.swirlds.common.merkle.synchronization.LearningSynchronizer;
 import com.swirlds.common.merkle.synchronization.config.ReconnectConfig;
 import com.swirlds.common.system.address.AddressBook;
+import com.swirlds.common.system.status.StatusActionSubmitter;
+import com.swirlds.common.system.status.actions.ReconnectCompleteAction;
 import com.swirlds.common.threading.manager.ThreadManager;
 import com.swirlds.logging.legacy.payload.ReconnectDataUsagePayload;
 import com.swirlds.platform.metrics.ReconnectMetrics;
@@ -69,22 +71,23 @@ public class ReconnectLearner {
     private final ThreadManager threadManager;
 
     /**
-     * @param threadManager
-     * 		responsible for managing thread lifecycles
-     * @param connection
-     * 		the connection to use for the reconnect
-     * @param addressBook
-     * 		the current address book
-     * @param currentState
-     * 		the most recent state from the learner
-     * @param reconnectSocketTimeout
-     * 		the amount of time that should be used for the socket timeout
-     * @param statistics
-     * 		reconnect metrics
+     * Able to submit actions that affect the status of the platform
+     */
+    private final StatusActionSubmitter statusActionSubmitter;
+
+    /**
+     * @param threadManager          responsible for managing thread lifecycles
+     * @param statusActionSubmitter  able to submit actions that affect the status of the platform
+     * @param connection             the connection to use for the reconnect
+     * @param addressBook            the current address book
+     * @param currentState           the most recent state from the learner
+     * @param reconnectSocketTimeout the amount of time that should be used for the socket timeout
+     * @param statistics             reconnect metrics
      */
     public ReconnectLearner(
             @NonNull final PlatformContext platformContext,
             @NonNull final ThreadManager threadManager,
+            @NonNull final StatusActionSubmitter statusActionSubmitter,
             @NonNull final Connection connection,
             @NonNull final AddressBook addressBook,
             @NonNull final State currentState,
@@ -96,6 +99,7 @@ public class ReconnectLearner {
 
         this.platformContext = Objects.requireNonNull(platformContext);
         this.threadManager = Objects.requireNonNull(threadManager);
+        this.statusActionSubmitter = Objects.requireNonNull(statusActionSubmitter);
         this.connection = Objects.requireNonNull(connection);
         this.addressBook = Objects.requireNonNull(addressBook);
         this.currentState = Objects.requireNonNull(currentState);
@@ -108,8 +112,7 @@ public class ReconnectLearner {
     }
 
     /**
-     * @throws ReconnectException
-     * 		thrown when there is an error in the underlying protocol
+     * @throws ReconnectException thrown when there is an error in the underlying protocol
      */
     private void increaseSocketTimeout() throws ReconnectException {
         try {
@@ -121,8 +124,7 @@ public class ReconnectLearner {
     }
 
     /**
-     * @throws ReconnectException
-     * 		thrown when there is an error in the underlying protocol
+     * @throws ReconnectException thrown when there is an error in the underlying protocol
      */
     private void resetSocketTimeout() throws ReconnectException {
         if (!connection.connected()) {
@@ -144,10 +146,11 @@ public class ReconnectLearner {
     /**
      * Perform the reconnect operation.
      *
-     * @throws ReconnectException
-     * 		thrown if I/O related errors occur, when there is an error in the underlying protocol, or the received
-     * 		state is invalid
+     * @param validator validates the received state
+     *
      * @return the state received from the other node
+     * @throws ReconnectException thrown if I/O related errors occur, when there is an error in the underlying protocol, or the received
+     *                            state is invalid
      */
     @NonNull
     public ReservedSignedState execute(@NonNull final SignedStateValidator validator) throws ReconnectException {
@@ -157,6 +160,10 @@ public class ReconnectLearner {
             final ReservedSignedState reservedSignedState = reconnect();
             validator.validate(reservedSignedState.get(), addressBook, stateValidationData);
             ReconnectUtils.endReconnectHandshake(connection);
+
+            statusActionSubmitter.submitStatusAction(
+                    new ReconnectCompleteAction(reservedSignedState.get().getRound()));
+
             return reservedSignedState;
         } catch (final IOException | SignedStateInvalidException e) {
             throw new ReconnectException(e);
@@ -171,8 +178,7 @@ public class ReconnectLearner {
     /**
      * Get a copy of the state from the other node.
      *
-     * @throws InterruptedException
-     * 		if the current thread is interrupted
+     * @throws InterruptedException if the current thread is interrupted
      */
     @NonNull
     private ReservedSignedState reconnect() throws InterruptedException {
@@ -208,8 +214,7 @@ public class ReconnectLearner {
     /**
      * Copy the signatures for the state from the other node.
      *
-     * @throws IOException
-     * 		if any I/O related errors occur
+     * @throws IOException if any I/O related errors occur
      */
     private void receiveSignatures() throws IOException {
         logger.info(RECONNECT.getMarker(), "Receiving signed state signatures");

@@ -69,7 +69,6 @@ import com.swirlds.common.system.events.EventDescriptor;
 import com.swirlds.common.system.status.PlatformStatus;
 import com.swirlds.common.system.status.PlatformStatusManager;
 import com.swirlds.common.system.status.actions.DoneReplayingEventsAction;
-import com.swirlds.common.system.status.actions.ReconnectCompleteAction;
 import com.swirlds.common.system.status.actions.StartedReplayingEventsAction;
 import com.swirlds.common.system.transaction.internal.StateSignatureTransaction;
 import com.swirlds.common.system.transaction.internal.SwirldTransaction;
@@ -1043,7 +1042,6 @@ public class SwirldsPlatform implements Platform {
 
         gossip.resetFallenBehind();
         eventCreator.resumeEventCreation();
-        platformStatusManager.submitStatusAction(new ReconnectCompleteAction(signedState.getRound()));
     }
 
     /**

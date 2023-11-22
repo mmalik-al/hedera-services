@@ -31,6 +31,7 @@ import com.swirlds.common.merkle.crypto.MerkleCryptography;
 import com.swirlds.common.system.NodeId;
 import com.swirlds.common.system.address.Address;
 import com.swirlds.common.system.address.AddressBook;
+import com.swirlds.common.system.status.StatusActionSubmitter;
 import com.swirlds.common.test.fixtures.RandomAddressBookGenerator;
 import com.swirlds.common.test.fixtures.RandomUtils;
 import com.swirlds.common.test.merkle.util.PairedStreams;
@@ -194,6 +195,7 @@ final class ReconnectTest {
         return new ReconnectLearner(
                 TestPlatformContextBuilder.create().build(),
                 getStaticThreadManager(),
+                mock(StatusActionSubmitter.class),
                 connection,
                 addressBook,
                 state,
