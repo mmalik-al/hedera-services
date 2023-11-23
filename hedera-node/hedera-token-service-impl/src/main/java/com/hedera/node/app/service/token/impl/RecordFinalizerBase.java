@@ -82,20 +82,23 @@ public class RecordFinalizerBase {
      *
      * @param writableTokenRelStore the {@link WritableTokenRelationStore} to get the token relation balances from
      * @param tokenStore the {@link ReadableTokenStore} to get the token from
+     * @param nftChanges the map of nft changes from previous step
      * @return a {@link Map} of {@link EntityIDPair} to {@link Long} representing the token relation balances for all
      * modified token relations
      */
     @NonNull
     protected Map<EntityIDPair, Long> fungibleChangesFrom(
             @NonNull final WritableTokenRelationStore writableTokenRelStore,
-            @NonNull final ReadableTokenStore tokenStore) {
+            @NonNull final ReadableTokenStore tokenStore,
+            final Map<TokenID, List<NftTransfer>> nftChanges) {
         final var fungibleChanges = new HashMap<EntityIDPair, Long>();
         for (final EntityIDPair modifiedRel : writableTokenRelStore.modifiedTokens()) {
             final var relAcctId = modifiedRel.accountId();
             final var relTokenId = modifiedRel.tokenId();
             final var token = tokenStore.get(relTokenId);
-            // Add this to fungible token transfer list only if this token is a fungible token
-            if (!token.tokenType().equals(TokenType.FUNGIBLE_COMMON)) {
+            // Add this to fungible token transfer list only if this token is a fungible token and nftChanges is not empty.
+            // If it's empty go through non-fungible as well, because in the case of disassociation changes to the nft balances are not reflected in the nftChanges map.
+            if (!token.tokenType().equals(TokenType.FUNGIBLE_COMMON) && !nftChanges.isEmpty()) {
                 continue;
             }
             final var modifiedTokenRel = writableTokenRelStore.get(relAcctId, relTokenId);
