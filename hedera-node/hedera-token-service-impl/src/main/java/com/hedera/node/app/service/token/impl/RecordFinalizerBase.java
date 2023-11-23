@@ -96,8 +96,10 @@ public class RecordFinalizerBase {
             final var relAcctId = modifiedRel.accountId();
             final var relTokenId = modifiedRel.tokenId();
             final var token = tokenStore.get(relTokenId);
-            // Add this to fungible token transfer list only if this token is a fungible token and nftChanges is not empty.
-            // If it's empty go through non-fungible as well, because in the case of disassociation changes to the nft balances are not reflected in the nftChanges map.
+            // Add this to fungible token transfer list only if this token is a fungible token and nftChanges is not
+            // empty.
+            // If it's empty go through non-fungible as well, because in the case of disassociation changes to the nft
+            // balances are not reflected in the nftChanges map.
             if (!token.tokenType().equals(TokenType.FUNGIBLE_COMMON) && !nftChanges.isEmpty()) {
                 continue;
             }

@@ -58,12 +58,10 @@ import com.hedera.services.bdd.suites.autorenew.AutoRenewConfigChoices;
 import com.hederahashgraph.api.proto.java.AccountAmount;
 import com.hederahashgraph.api.proto.java.TokenTransferList;
 import com.hederahashgraph.api.proto.java.TokenType;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -83,7 +81,6 @@ public class TokenUnhappyAccountsSuite extends HapiSuite {
     private static final String UNIQUE_TOKEN_A = "TokenA";
     public static final String TOKENS = " tokens";
     public static final String CREATION = "creation";
-
 
     public static void main(String... args) {
         new Hip17UnhappyAccountsSuite().runSuiteSync();
