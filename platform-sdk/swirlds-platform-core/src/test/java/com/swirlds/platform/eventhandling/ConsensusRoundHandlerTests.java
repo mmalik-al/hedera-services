@@ -75,7 +75,7 @@ class ConsensusRoundHandlerTests extends AbstractEventHandlerTests {
     @Override
     @BeforeEach
     public void setUp() {
-        super.setup();
+        super.setUp();
         eventStreamManager = mock(EventStreamManager.class);
         stateHashSignQueue = mock(QueueThread.class);
     }
