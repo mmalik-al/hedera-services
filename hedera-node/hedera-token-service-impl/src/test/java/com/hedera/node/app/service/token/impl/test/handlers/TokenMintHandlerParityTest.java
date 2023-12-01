@@ -44,7 +44,7 @@ class TokenMintHandlerParityTest extends ParityTestBase {
     private TokenMintHandler subject;
 
     @BeforeEach
-    void setup() {
+    void setUp() {
         validator = new TokenSupplyChangeOpsValidator();
         subject = new TokenMintHandler(validator);
     }

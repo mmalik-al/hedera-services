@@ -66,7 +66,7 @@ class TokenFeeScheduleUpdateHandlerTest extends CryptoTokenHandlerTestBase {
     private PreHandleContext preHandleContext;
 
     @BeforeEach
-    void setup() {
+    void setUp() {
         super.setUp();
         refreshWritableStores();
         validator = new CustomFeesValidator();
