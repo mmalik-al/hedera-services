@@ -53,7 +53,7 @@ class PreConsensusEventHandlerTests extends AbstractEventHandlerTests {
 
     @Override
     @BeforeEach
-    public void setup() {
+    public void setUp() {
         super.setup();
     }
 
