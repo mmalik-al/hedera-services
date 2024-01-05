@@ -109,7 +109,7 @@ class CustomMessageCallProcessorTest {
     private CustomMessageCallProcessor subject;
 
     @BeforeEach
-    void setUp() {
+    void setup() {
         subject = new CustomMessageCallProcessor(
                 evm,
                 featureFlags,

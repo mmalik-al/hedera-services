@@ -568,7 +568,7 @@ class BootstrapPropertiesTest {
     }
 
     @BeforeEach
-    void setUp() {
+    void setup() {
         subject.bootstrapOverridePropsLoc = EMPTY_OVERRIDE_PROPS_LOC;
     }
 

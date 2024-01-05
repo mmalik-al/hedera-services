@@ -48,7 +48,7 @@ class QueryContextHevmBlocksTest {
     private QueryContextHevmBlocks subject;
 
     @BeforeEach
-    void setUp() {
+    void setup() {
         subject = new QueryContextHevmBlocks(context);
         given(context.blockRecordInfo()).willReturn(blockRecordInfo);
     }

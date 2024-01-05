@@ -70,7 +70,7 @@ class DependencyMigrationTest extends MerkleTestBase {
     private MerkleHederaState merkleTree;
 
     @BeforeEach
-    void setUp() {
+    void setup() {
         registry = mock(ConstructableRegistry.class);
         merkleTree =
                 new MerkleHederaState((tree, state) -> {}, (e, m, s) -> {}, (s, p, ds, t, dv) -> {}, (s, ab, pc) -> {});

@@ -354,7 +354,7 @@ class HandleContextImplTest extends StateTestBase implements Scenarios {
         private HandleContext handleContext;
 
         @BeforeEach
-        void setUp() {
+        void setup() {
             final var payer = ALICE.accountID();
             final var payerKey = ALICE.account().keyOrThrow();
             when(writableStates.<EntityNumber>getSingleton(anyString())).thenReturn(entityNumberState);
@@ -447,7 +447,7 @@ class HandleContextImplTest extends StateTestBase implements Scenarios {
     @DisplayName("Handling of transaction data")
     final class TransactionDataTest {
         @BeforeEach
-        void setUp() {
+        void setup() {
             when(stack.createWritableStates(TokenService.NAME))
                     .thenReturn(MapWritableStates.builder()
                             .state(MapWritableKVState.builder("ACCOUNTS").build())
@@ -474,7 +474,7 @@ class HandleContextImplTest extends StateTestBase implements Scenarios {
     final class StackDataTest {
 
         @BeforeEach
-        void setUp() {
+        void setup() {
             when(stack.createWritableStates(TokenService.NAME))
                     .thenReturn(MapWritableStates.builder()
                             .state(MapWritableKVState.builder("ACCOUNTS").build())
@@ -538,7 +538,7 @@ class HandleContextImplTest extends StateTestBase implements Scenarios {
     @DisplayName("Handling of verification data")
     final class VerificationDataTest {
         @BeforeEach
-        void setUp() {
+        void setup() {
             when(stack.createWritableStates(TokenService.NAME))
                     .thenReturn(MapWritableStates.builder()
                             .state(MapWritableKVState.builder("ACCOUNTS").build())

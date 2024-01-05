@@ -125,7 +125,7 @@ class ContractUpdateHandlerTest extends ContractHandlerTestBase {
     private ContractUpdateHandler subject;
 
     @BeforeEach
-    public void setUp() {
+    public void setup() {
         subject = new ContractUpdateHandler();
     }
 

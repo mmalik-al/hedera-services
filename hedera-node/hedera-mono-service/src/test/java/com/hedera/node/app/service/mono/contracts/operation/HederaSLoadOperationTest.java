@@ -79,7 +79,7 @@ class HederaSLoadOperationTest {
     private GlobalDynamicProperties dynamicProperties;
 
     @BeforeEach
-    void setUp() {
+    void setup() {
         givenValidContext();
         subject = new HederaSLoadOperation(gasCalculator, dynamicProperties);
     }

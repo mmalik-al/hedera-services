@@ -83,7 +83,7 @@ class TokenUnfreezeAccountHandlerTest {
     private TokenUnfreezeAccountHandler subject;
 
     @BeforeEach
-    void setUp() {
+    void setup() {
         subject = new TokenUnfreezeAccountHandler();
     }
 
@@ -93,7 +93,7 @@ class TokenUnfreezeAccountHandlerTest {
         private ReadableTokenStore tokenStore;
 
         @BeforeEach
-        void setUp() {
+        void setup() {
             accountStore = SigReqAdapterUtils.wellKnownAccountStoreAt();
             tokenStore = SigReqAdapterUtils.wellKnownTokenStoreAt();
         }
@@ -360,7 +360,7 @@ class TokenUnfreezeAccountHandlerTest {
         private ReadableTokenStore tokenStore;
 
         @BeforeEach
-        void setUp() {
+        void setup() {
             accountStore = SigReqAdapterUtils.wellKnownAccountStoreAt();
             tokenStore = SigReqAdapterUtils.wellKnownTokenStoreAt();
         }

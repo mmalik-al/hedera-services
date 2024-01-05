@@ -63,7 +63,7 @@ class MerkleHederaStateTest extends MerkleTestBase {
      * be added.
      */
     @BeforeEach
-    void setUp() {
+    void setup() {
         setupFruitMerkleMap();
         hederaMerkle = new MerkleHederaState(
                 (tree, state) -> onPreHandleCalled.set(true),
@@ -335,7 +335,7 @@ class MerkleHederaStateTest extends MerkleTestBase {
     final class ReadableStatesTest {
 
         @BeforeEach
-        void setUp() {
+        void setup() {
             setupAnimalMerkleMap();
             setupSingletonCountry();
             setupSteamQueue();
@@ -533,7 +533,7 @@ class MerkleHederaStateTest extends MerkleTestBase {
     final class WritableStatesTest {
 
         @BeforeEach
-        void setUp() {
+        void setup() {
             setupAnimalMerkleMap();
             setupSingletonCountry();
             setupSteamQueue();

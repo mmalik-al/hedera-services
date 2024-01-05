@@ -56,7 +56,7 @@ class EvmActionTracerTest {
     private EvmActionTracer subject;
 
     @BeforeEach
-    void setUp() {
+    void setup() {
         given(frame.getMessageFrameStack()).willReturn(stack);
         given(stack.isEmpty()).willReturn(true);
         subject = new EvmActionTracer(actionStack);

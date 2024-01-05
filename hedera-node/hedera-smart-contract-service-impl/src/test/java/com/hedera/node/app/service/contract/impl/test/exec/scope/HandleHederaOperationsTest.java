@@ -112,7 +112,7 @@ class HandleHederaOperationsTest {
     private HandleHederaOperations subject;
 
     @BeforeEach
-    void setUp() {
+    void setup() {
         subject = new HandleHederaOperations(
                 DEFAULT_LEDGER_CONFIG,
                 DEFAULT_CONTRACTS_CONFIG,

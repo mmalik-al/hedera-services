@@ -72,7 +72,7 @@ class QueryHederaNativeOperationsTest {
     private QueryHederaNativeOperations subject;
 
     @BeforeEach
-    void setUp() {
+    void setup() {
         subject = new QueryHederaNativeOperations(context);
     }
 

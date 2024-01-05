@@ -66,7 +66,7 @@ class HederaEvmSLoadOperationTest {
     final Bytes valueBytesMock = Bytes.of(4, 3, 2, 1);
 
     @BeforeEach
-    void setUp() {
+    void setup() {
         givenValidContext();
         subject = new HederaEvmSLoadOperation(gasCalculator);
     }

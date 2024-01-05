@@ -48,7 +48,7 @@ class HandleContextHevmBlocksTest {
     private HandleContextHevmBlocks subject;
 
     @BeforeEach
-    void setUp() {
+    void setup() {
         subject = new HandleContextHevmBlocks(context);
         given(context.blockRecordInfo()).willReturn(blockRecordInfo);
     }

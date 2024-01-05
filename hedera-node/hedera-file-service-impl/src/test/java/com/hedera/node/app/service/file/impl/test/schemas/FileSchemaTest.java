@@ -54,7 +54,7 @@ final class FileSchemaTest {
     private ConfigProvider configProvider;
 
     @BeforeEach
-    void setUp() {
+    void setup() {
         configProvider = new BootstrapConfigProviderImpl();
         newStates = MapWritableStates.builder()
                 .state(MapWritableKVState.builder(FileServiceImpl.BLOBS_KEY).build())

@@ -115,7 +115,7 @@ class HandleHederaNativeOperationsTest {
     private HandleHederaNativeOperations subject;
 
     @BeforeEach
-    void setUp() {
+    void setup() {
         subject = new HandleHederaNativeOperations(context);
     }
 

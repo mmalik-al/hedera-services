@@ -79,7 +79,7 @@ class TokenFreezeAccountHandlerTest {
     private TokenFreezeAccountHandler subject;
 
     @BeforeEach
-    void setUp() {
+    void setup() {
         subject = new TokenFreezeAccountHandler();
     }
 

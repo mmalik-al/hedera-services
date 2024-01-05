@@ -65,7 +65,7 @@ class StakingPeriodTimeHookTest {
     private StakingPeriodTimeHook subject;
 
     @BeforeEach
-    void setUp() {
+    void setup() {
         given(context.readableStore(ReadableBlockRecordStore.class)).willReturn(blockStore);
 
         subject = new StakingPeriodTimeHook(stakingPeriodCalculator, exchangeRateManager);

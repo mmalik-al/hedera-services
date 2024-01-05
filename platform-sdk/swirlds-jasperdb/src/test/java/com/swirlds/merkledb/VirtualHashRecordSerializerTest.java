@@ -35,7 +35,7 @@ class VirtualHashRecordSerializerTest {
     private VirtualHashRecordSerializer subject;
 
     @BeforeEach
-    void setUp() {
+    void setup() {
         subject = new VirtualHashRecordSerializer();
     }
 
